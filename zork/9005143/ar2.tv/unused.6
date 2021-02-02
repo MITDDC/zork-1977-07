@@ -1,0 +1,223 @@
+<USE-TOTAL "ASYLUM">
+
+<USE "MADMAN">
+
+<FLOAD "AR2:TAA;SSNAME NBIN">
+
+<DEFINE GUNUSED ("OPTIONAL" (ENABLE T)
+		 "AUX" (DC ,TVASS) UV HI (LOSSTABLE ,LOSSTABLE) (UV1 ,DUV1)
+		 (SP <OR <AND <GASSIGNED? MOBYSPACE>
+			      ,MOBYSPACE>
+			 <SETG MOBYSPACE <AFIND 4>>>))
+  #DECL ((DC) ASYLUM (HI) FIX (UV UV1) <UVECTOR [REST <PRIMTYPE WORD>]>
+	 (LOSSTABLE) <LIST [REST TIME STRING FIX FIX]> (SP) SPACE
+	 (ENABLE) <OR ATOM FALSE>)
+  <ALLOC-MAP .DC>
+  <SET HI
+	<CHTYPE <1 <GET-LOC <+ ,HIGHID <* <ALLOCPAGE .DC> 1024>> .UV1>> FIX>>
+  <GUNASSIGN MOBY>
+  <ARESET .SP>
+  <SETG MUV <SET UV <AIUVECTOR .SP .HI 0>>>
+  <MARK-CHAIN ,LOMAIL .UV .DC>
+  <SSNAME <STRTOX "MARKQ">>
+  <MARK-Q-CHAIN .UV .DC>
+  <REPEAT (LUBLK)
+    <COND (<EMPTY? .LOSSTABLE> <RETURN>)>
+    <SET LUBLK <3 .LOSSTABLE>>
+    <SSNAME <1 .LOSSTABLE>>
+    <MARK-UBLOCK .LUBLK .UV>
+    <MARK-CHAIN <+ .LUBLK ,ANEXT> .UV .DC>
+    <MARK-CHAIN <+ .LUBLK ,MNEXT> .UV .DC>
+    <SET LOSSTABLE <REST .LOSSTABLE 4>>>
+  <SUBSTRUC <IUVECTOR 27 1> 0 27 .UV>
+  <PRESULT .UV .DC .ENABLE>>
+
+<DEFINE MARK-CHAIN (START BUCKET DC)
+  #DECL ((START) FIX (BUCKET) <UVECTOR [REST FIX]> (DC) ASYLUM)
+  <REPEAT ()
+    <COND (<0? <SET START <CHTYPE <DATA-READW .DC .START> FIX>>>
+	   <RETURN>)
+	  (T
+	   <PUT .BUCKET .START <+ <NTH .BUCKET .START> 1>>)>>>
+
+<DEFINE MARK-Q-CHAIN (BUCKET DC
+		      "AUX" Q S (START ,LOWQUES) (TVS <ARESET ,QSPACE>))
+	#DECL ((BUCKET) <UVECTOR [REST FIX]> (DC) ASYLUM (S START) FIX
+	       (TVS) SPACE (Q) VECTOR)
+	<REPEAT ()
+		<COND (<0? <SET START <CHTYPE <DATA-READW .DC .START> FIX>>>
+		       <RETURN>)
+		      (T
+		       <SET Q <DATA-AREAD .DC .START <ARESET .TVS>>>
+		       <SET S <QSCORE .Q>>
+		       <PUT .BUCKET .START <+ <NTH .BUCKET .START> 1>>
+		       <COND (<AND <0? .S> <==? <QTYPE .Q> ,$TSIMPLE>>)
+			     (T <PUT .BUCKET .S <+ <NTH .BUCKET .S> 1>>)>)>>>
+
+<DEFINE MARK-UBLOCK (LUBLK UV "AUX" (MARKS '![1 1 1 1 1 1 1 1 1 1 1 1]))
+  #DECL ((LUBLK) FIX (UV MARKS) <UVECTOR [REST FIX]>)
+  <SUBSTRUC .MARKS 0 12 <REST .UV <- .LUBLK 1>>>>
+
+<DEFINE PRESULT (UV DC ENABLE "AUX" MDATA (CT 0) (ULIST (0)) POINT
+		 (FLIST (0)) CLIST) 
+   #DECL ((ENABLE) <OR ATOM FALSE> (CLIST ULIST FLIST) <LIST [REST FIX]>
+	  (UV) <UVECTOR [REST FIX]> (DC) ASYLUM (CT POINT) FIX
+	  (MDATA) <UVECTOR [4 <PRIMTYPE WORD>]>)
+   <MARK-FREE .UV .DC>
+   <MAPF <>
+    <FUNCTION (X) 
+       #DECL ((X) FIX)
+       <SET CT <+ .CT 1>>
+       <COND
+	(<0? .X>
+	 <SET MDATA <DATA-FIND .DC .CT>>
+	 <COND (<L? <SET POINT <CHTYPE <3 .MDATA> FIX>> 0>
+		<SET POINT <CHTYPE <ANDB .POINT *777777*> FIX>>
+		<SET CLIST .FLIST>)
+	       (T
+		<SET CLIST .ULIST>
+		<SET POINT <CHTYPE <4 .MDATA> FIX>>)>
+	 <COND
+	  (<NOT .ENABLE> <PUTREST .CLIST (.CT !<REST .CLIST>)>)
+	  (<EMPTY? <REST .CLIST>> <PUTREST .CLIST (.CT <- .POINT>)>)
+	  (<REPEAT (TEMP (NL <REST .CLIST>) (OLD .CLIST) (FCT <- .CT>) (WON2 <>)
+		    (WON1 <>) (LASTM .CLIST) TLIST)
+		   #DECL ((TEMP FCT) FIX (TLIST LASTM NL OLD FCT) <LIST [REST FIX]>
+			  (WON2 WON1) <OR <LIST [REST FIX]> FALSE>)
+		   <COND (<AND <==? <SET TEMP <1 .NL>> .POINT> <G? .POINT 0>>
+			  <COND (.WON2
+				 <PUTREST .OLD ()>
+				 <SET TLIST <REST .WON2 2>>
+				 <PUTREST .WON2 .NL>
+				 <PUTREST <REST .NL <- <LENGTH .NL> 1>> .TLIST>
+				 <RETURN>)
+				(T <PUTREST .OLD (.CT !.NL)> <SET WON1 .OLD>)>)
+			 (<==? .TEMP .FCT>
+			  <COND (.WON1
+				 <PUTREST .OLD <REST .WON1>>
+				 <PUTREST .WON1 <REST .LASTM>>
+				 <PUTREST .LASTM <REST .NL>>
+				 <RETURN>)
+				(<AND <NOT <LENGTH? .NL 1>>
+				      <==? <2 .NL> .POINT>>
+				 <PUTREST .OLD (.CT !<REST .NL>)>
+				 <RETURN>)
+				(T
+				 <PUTREST .OLD (.CT <- .POINT> !<REST .NL>)>
+				 <SET WON2 <REST .OLD>>)>)>
+		   <SET OLD .NL>
+		   <COND (<L=? .TEMP 0> <SET LASTM .NL>)>
+		   <COND (<EMPTY? <SET NL <REST .NL>>>
+			  <AND <NOT .WON1>
+			       <NOT .WON2>
+			       <PUTREST .CLIST
+					(.CT <- .POINT> !<REST .CLIST>)>>
+			  <RETURN>)>>)>
+	 <PRINC "Unused item #">
+	 <PRINC .CT>
+	 <CRLF>)
+	(<L? .X 0>)
+	(<G? .X 1>
+	 <PRINC "Item #">
+	 <PRINC .CT>
+	 <PRINC " used ">
+	 <PRINC .X>
+	 <PRINC " times.">
+	 <CRLF>)>>
+    .UV>
+   <SETG ULIST
+	 <COND (.ENABLE
+		<REPEAT (TEMP (OLD .ULIST) (NLIST ()) (UL .ULIST)
+			 (NL <REST .ULIST>))
+			#DECL ((NLIST) <LIST [REST <LIST [REST FIX]>]>
+			       (UL NL) <LIST [REST FIX]> (TEMP) FIX)
+			<COND (<EMPTY? .NL>
+			       <SET NLIST (<REST .UL> !.NLIST)>
+			       <RETURN .NLIST>)
+			      (<L=? <SET TEMP <1 .NL>> 0>
+			       <COND (<EMPTY? <REST .NL>>
+				      <PUTREST .OLD ()>
+				      <SET NLIST (<REST .UL> !.NLIST)>
+				      <RETURN .NLIST>)
+				     (T
+				      <PUTREST .OLD ()>
+				      <SET NLIST (<REST .UL> !.NLIST)>
+				      <SET UL .NL>)>)>
+			<SET OLD .NL>
+			<SET NL <REST .NL>>>)
+	       (T <REST .ULIST>)>>
+   <SETG FLIST
+	 <COND (.ENABLE
+		<REPEAT (TEMP (OLD .FLIST) (NLIST ()) (UL .FLIST)
+			 (NL <REST .FLIST>))
+			#DECL ((NLIST) <LIST [REST <LIST [REST FIX]>]>
+			       (UL NL) <LIST [REST FIX]> (TEMP) FIX)
+			<COND (<EMPTY? .NL>
+			       <SET NLIST (<REST .UL> !.NLIST)>
+			       <RETURN .NLIST>)
+			      (<L=? <SET TEMP <1 .NL>> 0>
+			       <COND (<EMPTY? <REST .NL>>
+				      <PUTREST .OLD ()>
+				      <SET NLIST (<REST .UL> !.NLIST)>
+				      <RETURN .NLIST>)
+				     (T
+				      <PUTREST .OLD ()>
+				      <SET NLIST (<REST .UL> !.NLIST)>
+				      <SET UL .NL>)>)>
+			<SET OLD .NL>
+			<SET NL <REST .NL>>>)
+	       (T <REST .FLIST>)>>
+   <UVECTOR ,ULIST ,FLIST>>
+
+
+<SETG AUV1 <UVECTOR #WORD *0*>>
+<GDECL (AUV1) <UVECTOR <PRIMTYPE WORD>>>
+
+<DEFINE MARK-FREE (UV DC "AUX" FOO)
+  #DECL ((UV) <UVECTOR [REST FIX]> (DC) ASYLUM (FOO) FIX)
+  <SSNAME <STRTOX "MARKF">>
+  <SET FOO <CHTYPE <1 <GET-LOC <+ ,IDCHAIN <* 1024 <ALLOCPAGE .DC>>>
+			       ,AUV1>>
+		   FIX>>
+  <REPEAT (TEMP Q) #DECL ((TEMP) FIX (Q) <UVECTOR [REST <PRIMTYPE WORD>]>)
+	  <AND <G=? .FOO 0> <RETURN>>
+	  <SET FOO <CHTYPE <ANDB .FOO #WORD *000000777777*> FIX>>
+	  <COND (<0? <SET TEMP <NTH .UV .FOO>>>
+		 <PUT .UV .FOO -1>)
+		(<L? .TEMP 0>
+		 <ERROR CIRCULAR-FREE-CHAIN .FOO>)
+		(T
+		 <PRINC "Free item #">
+		 <PRINC .FOO>
+		 <PRINC " used ">
+		 <PRINC .TEMP>
+		 <PRINC " times.">
+		 <CRLF>)>
+	  <SET Q <DATA-FIND .DC .FOO>>
+	  <SET FOO <CHTYPE <3 .Q> FIX>>>>
+
+<DEFINE LISTU ("OPTIONAL" (DC ,TVASS) (SP ,ASPACE)
+	       "AUX" (ALL <* 1024 <ALLOCPAGE .DC>>) HI V)
+    #DECL ((DC) ASYLUM (ALL HI) FIX (V) UVECTOR (SP) SPACE)
+    <SET HI <CHTYPE <1 <GET-LOC <+ .ALL ,HIGHID> ,DUV1>> FIX>>
+    <SET V <AIUVECTOR ,MOBYSPACE .HI 0>>
+    <REPEAT ((VEC .V) (N 1) FX)
+	#DECL ((VEC) UVECTOR (N FX) FIX)
+	<SET FX <CHTYPE <DATA-READW .DC .N> FIX>>
+	<COND (<AND <G? .FX 0> <L? .FX .HI>>
+	       <PUT .VEC .FX 1>)>
+	<AND <==? .N .HI> <RETURN>>
+	<SET N <+ .N 1>>>
+    <MAPR <>
+	<FUNCTION (X "AUX" FOO)
+	    #DECL ((X) UVECTOR (FOO) FIX)
+	    <COND (<1? <1 .X>>)
+		  (<DATA-AREAD .DC <SET FOO <- <LENGTH .V> <LENGTH .X> -1>>
+			 <ARESET .SP>>
+		   <COND (<OR <MEMQ <- .FOO 3> ,LOSSTABLE>
+			      <MEMQ <- .FOO 6> ,LOSSTABLE>>)
+		         (<PRINC "
+Non-referenced object #">
+		 	  <PRIN1 .FOO>)>)>>
+	.V>
+    ,NULL>

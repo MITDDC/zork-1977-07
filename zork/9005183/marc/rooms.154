@@ -1,0 +1,816 @@
+"GUTS OF FROB:  BASIC VERBS, COMMAND READER, PARSER, VOCABULARY HACKERS."
+
+<SETG READ-FLAG!-FLAG T>
+
+<DEFINE SAVE-IT ("OPTIONAL" (FN "MADMAN;MADADV SAVE"))
+  <COND (<=? <SAVE .FN> "SAVED"> T)
+        (T
+	 <COND (<=? <SUBSTRUC <UNAME> 0 3> "___">
+		<QUIT>)>
+	 <PUT <1 <BACK ,INCHAN>> 6 #LOSE 13> ; "FIRST, TAKE OFF THE BACK...."
+	 <START "WHOUS">)>>
+
+<DEFINE HANDLE (FRM "TUPLE" ZORK)
+  <COND (<MEMBER <UNAME> ,WINNERS>
+	 <AND <GASSIGNED? SAVEREP> <SETG REP ,SAVEREP>>
+	 <INT-LEVEL 0>
+	 <RESET ,INCHAN>
+	 <PUT <1 <BACK ,INCHAN>> 6 #LOSE 27>)
+	(T
+	 <COND (<AND <NOT <EMPTY? .ZORK>><==? <1 .ZORK> CONTROL-G?!-ERRORS>>
+		<INT-LEVEL 0>
+		<FINISH>
+		<ERRET T .FRM>)
+	       (<TELL
+"I'm sorry, you seem to have encountered an error in the program.
+Send mail to BKD@DM or TAA@DM describing what it was you tried to do.">
+	 <SCORE>
+	 <QUIT>)>)>>
+
+<SETG WINNERS '["BKD" "TAA" "MARC" "PDL"]>
+
+<GDECL (WINNERS) <VECTOR [REST STRING]>>
+
+<OR <LOOKUP "COMPILE" <ROOT>>
+    <LOOKUP "GLUE" <GET PACKAGE OBLIST>>
+    <SETG ERRH <HANDLER <GET ERROR!-INTERRUPTS INTERRUPT> ,HANDLE>>>
+
+<GDECL (MOVES) FIX>
+
+<DEFINE START (RM)
+	#DECL ((RM) STRING)
+	<SETG DEATHS 0>
+	<SETG MOVES 0>
+	<SETG WINNER <CHTYPE [<SETG HERE <FIND-ROOM .RM>> () 0] ADV>>
+	<SETG SAVEREP ,REP>
+	<SETG REP ,RDCOM>
+	<TELL "Welcome to adventure.">
+	,NULL>
+
+<DEFINE PROB (NUM) #DECL ((NUM) FIX) <L=? <MOD <RANDOM> 100> .NUM>>
+
+;"LIT? --
+	IS THERE ANY LIGHT SOURCE IN THIS ROOM"
+ 
+<DEFINE LIT? (RM) 
+	#DECL ((RM) ROOM)
+	<OR <RLIGHT? .RM> 
+	    <LFCN <ROBJS .RM>>
+	    <LFCN <AOBJS ,WINNER>>>>
+ 
+<DEFINE LFCN (L)
+	#DECL ((L) <LIST [REST OBJECT]>)
+	<MAPF <>
+	      <FUNCTION (X)
+		  #DECL ((X) OBJECT)
+		  <AND <G? <OLIGHT? .X> 0>
+		       <MAPLEAVE T>>>
+	      .L>>
+;"WALK --
+	GIVEN A DIRECTION, WILL ATTEMPT TO WALK THERE"    
+ 
+<DEFINE WALK ("AUX" LEAVINGS NRM (WHERE <CHTYPE <2 ,PRSVEC> ATOM>) (ME ,WINNER)
+		    (RM <1 .ME>))
+	#DECL ((WHERE) ATOM (ME) ADV (RM) ROOM (LEAVINGS) <OR ROOM CEXIT NEXIT>
+	       (NRM) <OR FALSE
+			 <<PRIMTYPE VECTOR> [REST ATOM <OR ROOM NEXIT CEXIT>]>>)
+	<COND (<AND <NOT <LIT? .RM>> <PROB 75>>
+	       <COND (<SET NRM <MEMQ .WHERE <REXITS .RM>>>
+		      <SET LEAVINGS <2 .NRM>>
+		      <COND (<AND <TYPE? .LEAVINGS ROOM>
+				  <LIT? .LEAVINGS>>
+			     <GOTO .LEAVINGS>
+			     <ROOM-INFO <>>)
+			    (<AND <TYPE? .LEAVINGS CEXIT>
+				  ,<CXFLAG .LEAVINGS>
+				  <LIT? <SET LEAVINGS <CXROOM .LEAVINGS>>>>
+			     <GOTO .LEAVINGS>
+			     <ROOM-INFO <>>)
+			    (<TELL
+"Dear, dear.  You seem to have fallen into a bottomless pit.">
+			     <SLEEP 4>
+			     <JIGS-UP <PICK-ONE ,NO-LIGHTS>>)>)
+		     (<TELL
+"Dear, dear.  You seem to have fallen into a bottomless pit.">
+		      <SLEEP 4>
+		      <JIGS-UP <PICK-ONE ,NO-LIGHTS>>)>)
+	      (<SET NRM <MEMQ .WHERE <REXITS .RM>>>
+	       <SET LEAVINGS <2 .NRM>>
+	       <COND (<TYPE? .LEAVINGS ROOM>
+		      <GOTO .LEAVINGS>
+		      <ROOM-INFO <>>)
+		     (<TYPE? .LEAVINGS CEXIT>
+		      <COND (,<CXFLAG .LEAVINGS>
+			     <GOTO <CXROOM .LEAVINGS>>
+			     <ROOM-INFO <>>)
+			    (<CXSTR .LEAVINGS> <TELL <CXSTR .LEAVINGS>>)
+			    (<TELL "There is no way to go in this direction.">)>
+)
+		     (T <TELL .LEAVINGS>)>)
+	      (<TELL "There is no way to go in this direction.">)>>
+
+<SETG NO-LIGHTS
+      '[
+"Oops!  It wasn't quite bottomless.  You hit the [solid rock] bottom at
+more than 85 mph, shattering many of your bones."
+	"What's your life insurance company?"
+	
+"I hope you left the name of your next-of-kin at the main office when
+you came in.  Not that there's much left to show them..."
+	
+"My map must be in error.  I could have sworn that was a bottomless pit,
+but you seem to have found a bottom.  Thanks for your assistance."]>
+
+;
+"ROOM-INFO --
+	PRINT SOMETHING ABOUT THIS PLACE
+	1. CHECK FOR LIGHT --> ELSE WARN LOSER
+	2. GIVE A DESCRIPTION OF THE ROOM
+	3. TELL WHAT'S ON THE FLOOR IN THE WAY OF OBJECTS
+	4. SIGNAL ENTRY INTO THE ROOM
+"
+
+<DEFINE ROOM-DESC () <ROOM-INFO T>>
+
+<DEFINE ROOM-INFO (FULL "AUX" (RM ,HERE)) 
+   #DECL ((RM) ROOM (FULL) <OR ATOM FALSE>)
+   <SETG TELL-FLAG T>
+   <PROG ()
+	 <COND (<NOT <LIT? .RM>>
+		<TELL 
+"It is now completely dark.  You will probably fall into a pit.">
+		<RETURN>)
+	       (<AND <RSEEN? .RM> <PROB 80> <NOT .FULL>> <TELL <RDESC2 .RM>>)
+	       (<AND <EMPTY? <RDESC1 .RM>> <RACTION .RM>>
+		<PUT ,PRSVEC 1 ,LOOK!-WORDS>
+		<APPLY <RACTION .RM>>)
+	       (<TELL <RDESC1 .RM>>)>
+	 <PUT .RM ,RSEEN? T>
+	 <MAPF <>
+	       <FUNCTION (X "AUX" Y) 
+		       #DECL ((X) OBJECT (Y) <OR FALSE OBJECT>)
+		       <COND (<OVIS? .X>
+			      <LONG-DESC-OBJ .X>
+			      <CRLF>
+			      <MAPF <>
+				    <FUNCTION (Y) 
+					    #DECL ((Y) OBJECT)
+					    <LONG-DESC-OBJ .Y>
+					    <PRINC " [in the ">
+					    <PRINC <ODESC2 .X>>
+					    <PRINC "]">
+					    <CRLF>>
+				    <OCONTENTS .X>>)>>
+	       <ROBJS .RM>>
+	 <AND <RACTION .RM>
+	      <NOT .FULL>
+	      <PUT ,PRSVEC 1 ,WALK-IN!-WORDS>
+	      <APPLY <RACTION .RM>>>>>
+
+"GIVE LONG DESCRIPTION OF OBJECT"
+
+<DEFINE LONG-DESC-OBJ (OBJ) #DECL ((OBJ) OBJECT)
+  <COND (<OR <OTOUCH? .OBJ> <NOT <ODESCO .OBJ>>>
+	 <PRINC <ODESC1 .OBJ>>)
+	(<PRINC <ODESCO .OBJ>>)>>
+
+;"TELL --
+	PRINT SOMETHING FOR USER:  NOW HAND-CRUFTED"
+
+;"RDCOM --
+	READ A COMMAND LINE AND WIN IMMEDIATELY"
+
+<DEFINE RDCOM ("AUX" RVEC RM INPLEN (INBUF ,INBUF)) 
+	#DECL ((RVEC) <OR FALSE VECTOR> (RM) ROOM (INPLEN) FIX (INBUF) STRING)
+	<PUT ,OUTCHAN 13 1000>
+	<ROOM-INFO T>
+	<REPEAT ()
+		<SET RM ,HERE>
+		<RESET ,INCHAN>
+		<PRINC ">">
+		<SETG TELL-FLAG <>>
+		<SET INPLEN
+		     <READSTRING .INBUF
+				 ,INCHAN
+				 <STRING <ASCII 27> <ASCII 13> <ASCII 15>>>>
+		<SETG MOVES <+ ,MOVES 1>>
+		<COND (<AND <EPARSE <LEX .INBUF <REST .INBUF .INPLEN> T> <>>
+			    <TYPE? <1 <SET RVEC ,PRSVEC>> VERB>>
+		       <COND (<APPLY <VFCN <1 .RVEC>>>
+			      <COND (<AND <RACTION .RM>
+					  <APPLY <RACTION .RM>>>)>)>)>
+		<OR ,TELL-FLAG
+		    <TELL "Nothing happens.">>
+		<MAPF <>
+		      <FUNCTION (X) 
+			      #DECL ((X) HACK)
+			      <COND (<HACTION .X> <APPLY <HACTION .X> .X>)>>
+		      ,DEMONS>>>
+
+<DEFINE TAKE ("AUX" (WIN ,WINNER) (VEC ,PRSVEC) (RM <AROOM .WIN>) NOBJ
+		    (OBJ <2 .VEC>))
+	#DECL ((WIN) ADV (VEC) VECTOR (OBJ NOBJ) PRSOBJ (RM) ROOM)
+	<COND (<TYPE? .OBJ ATOM>
+	       <TELL "There's none for the taking.">)
+	      (<AND <NOT .OBJ>
+		    <==? <LENGTH <ROBJS .RM>> 1>
+		    <SET OBJ <1 <ROBJS .RM>>>
+		    <>>)
+	      (<NOT .OBJ>
+	       <TELL
+"Take what?">)
+	      (<AND <SET NOBJ <OCAN .OBJ>> <SET OBJ .NOBJ> <>>)
+	      (<MEMQ .OBJ <ROBJS .RM>>
+	       <COND (<G? <+ <LENGTH <AOBJS .WIN>> <LENGTH <OCONTENTS .OBJ>>>
+			  ,LOAD-MAX>
+		      <TELL 
+"Your load is too heavy.  You will have to leave something behind.">)
+		     (<NOT <APPLY-OBJECT .OBJ>>
+		      <COND (<PUT .WIN
+				  ,AOBJS
+				  (.OBJ !<AOBJS .WIN>)>
+			     <PUT .OBJ ,OTOUCH? T>
+			     <PUT .RM ,ROBJS <SPLICE-OUT .OBJ <ROBJS .RM>>>
+			     <COND (<G? <OFVAL .OBJ> 0>
+				    <PUT .WIN
+					 ,ASCORE
+					 <+ <ASCORE .WIN> <OFVAL .OBJ>>>
+				    <PUT .OBJ ,OFVAL 0>)>
+			     <TELL "Taken.">)>)>)
+	      (<MEMQ .OBJ <AOBJS .WIN>>
+	       <TELL "You already have it.">)
+	      (<TELL "I can't see one here.">)>>  
+ 
+<DEFINE DROP ("AUX" (WINNER ,WINNER) (AOBJS <AOBJS .WINNER>)
+	      (VEC ,PRSVEC) (RM <AROOM .WINNER>) (OBJ <2 .VEC>) CAN NOBJ)
+	#DECL ((VEC) VECTOR (OBJ) PRSOBJ (CAN) <OR FALSE OBJECT> (RM) ROOM (NOBJ) ANY)
+	<COND (<TYPE? .OBJ ATOM>
+	       <TELL "You don't have one to drop.">)
+	      (<AND
+	        <==? <LENGTH .AOBJS> 1>
+		<NOT <2 .VEC>>
+		<PUT .VEC 2 <SET OBJ <1 .AOBJS>>>
+		<>>)
+	      (<AND
+	        <3 .VEC>
+		<NOT <OR <MEMQ .OBJ .AOBJS>
+			 <MEMQ <OCAN .OBJ> .AOBJS>>>
+		<PUT .VEC 2 <3 .VEC>>
+		<PUT .VEC 3 .OBJ>
+		<SET OBJ <2 .VEC>>
+		<>>)
+	      (<NOT .OBJ> <TELL "Drop what?">)
+	      (<OR <MEMQ <OCAN .OBJ> .AOBJS>
+		   <MEMQ .OBJ .AOBJS>>
+	       <COND (<SET CAN <OCAN .OBJ>>
+		      <PUT .CAN ,OCONTENTS <SPLICE-OUT .OBJ <OCONTENTS .CAN>>>
+		      <PUT .OBJ ,OCAN <>>)
+		     (<PUT .WINNER ,AOBJS <SPLICE-OUT .OBJ .AOBJS>>)>
+	       <PUT .RM ,ROBJS (.OBJ !<ROBJS .RM>)>
+	       <AND <MEMQ <VNAME <1 .VEC>> '[GIVE!-WORDS THROW!-WORDS]>
+		    <NOT <3 .VEC>>
+		    <PUT .VEC 3 <VICTIMS? .RM>>>
+	       <COND (<OBJECT-ACTION>)
+		     (<==? <VNAME <1 .VEC>> DROP!-WORDS> <TELL "Dropped.">)
+		     (<==? <VNAME <1 .VEC>> THROW!-WORDS> <TELL "Thrown.">)>)
+	      (<TELL "You are not carrying that.">)>>
+
+;"OBJECT-ACTION --
+	CALL OBJECT FUNCTIONS FOR DIRECT AND INDIRECT OBJECTS"
+
+<DEFINE OBJECT-ACTION ("AUX" (VEC ,PRSVEC) NOBJ (PRSO <2 .VEC>) (PRSI
+								 <3 .VEC>)) 
+    #DECL ((PRSI PRSO) PRSOBJ (VEC) VECTOR (NOBJ) ANY)
+    <PROG ()
+	<COND (<AND .PRSI <TYPE? .PRSI OBJECT>>
+	       <COND (<OBJ-HERE? .PRSI>
+		      <AND <APPLY-OBJECT .PRSI> <RETURN T>>)
+		     (<RETURN <TELL "There is none of those here.">>)>)>
+	<COND (<AND .PRSO <TYPE? .PRSO OBJECT>>
+	       <COND (<OBJ-HERE? .PRSO>
+	       	      <APPLY-OBJECT .PRSO>)
+		     (<TELL "There is none of those here.">)>)>>>
+
+<DEFINE OBJ-HERE? (OBJ "AUX" (RM ,HERE) (WIN ,WINNER))
+	#DECL ((OBJ) OBJECT (RM) ROOM (WIN) ADV)
+	<AND <OCAN .OBJ>
+	     <SET OBJ <OCAN .OBJ>>>
+	<OR <MEMQ .OBJ <ROBJS .RM>>
+	    <MEMQ .OBJ <AOBJS .WIN>>>>
+
+<DEFINE SPLICE-OUT (OBJ AL) 
+	#DECL ((AL) LIST)
+	<COND (<==? <1 .AL> .OBJ> <REST .AL>)
+	      (T
+	       <REPEAT ((NL <REST .AL>) (OL .AL))
+		       #DECL ((NL OL) LIST)
+		       <COND (<==? <1 .NL> .OBJ> <PUTREST .OL <REST .NL>> <RETURN .AL>)
+			     (<SET OL .NL> <SET NL <REST .NL>>)>>)>>  
+ 
+<DEFINE INVENT ("AUX" (ANY <>)) 
+   #DECL ((ANY) <OR ATOM FALSE>)
+   <MAPF <>
+	 <FUNCTION (X) 
+		 #DECL ((X) OBJECT)
+		 <COND (<OVIS? .X>
+			<OR .ANY
+			    <PROG ()
+				  <TELL "You are carrying:">
+				  <SET ANY T>>>
+			<PRINC "A ">
+			<PRINC <ODESC2 .X>>
+			<OR <EMPTY? <OCONTENTS .X>> <PRINC " with ">>
+			<MAPR <>
+			      <FUNCTION (Y) 
+				      #DECL ((Y) <LIST [REST OBJECT]>)
+				      <PRINC <ODESC2 <1 .Y>>>
+				      <COND (<G? <LENGTH .Y> 1> <PRINC " and ">)
+					    (<0? <LENGTH .Y>> <PRINC ".">)>>
+			      <OCONTENTS .X>>
+			<CRLF>)>>
+	 <AOBJS ,WINNER>>
+   <OR .ANY <TELL "You are empty handed.">>>
+
+<DEFINE POUR () T>  
+ 
+<DEFINE THROW () T> 
+ 
+<DEFINE MOVE ("AUX" (VEC ,PRSVEC) (RM <AROOM ,WINNER>) (OBJ <2 .VEC>))
+	#DECL ((VEC) VECTOR (RM) ROOM (OBJ) <OR ATOM OBJECT>)
+	<COND (<TYPE? .OBJ ATOM>
+	       <TELL "How can you move THAT?">)
+	      (<MEMQ .OBJ <ROBJS .RM>> <OBJECT-ACTION>)
+	      (<TELL "I can't see one here.">)>>
+
+<DEFINE VICTIMS? (RM) 
+	#DECL ((RM) ROOM)
+	<MAPF <>
+	      <FUNCTION (X) 
+		      #DECL ((X) OBJECT)
+		      <COND (<MEMQ .X ,VICTIMS> <MAPLEAVE .X>)>>
+	      <ROBJS .RM>>>  
+ 
+<DEFINE LAMP-ON LAMPO ("AUX" (ME ,WINNER) OBJ (LIT? <LIT? ,HERE>))
+	#DECL ((ME) ADV (OBJ) <OR ATOM OBJECT FALSE> (LAMPO) ACTIVATION)
+	<OR <2 ,PRSVEC> <PUT ,PRSVEC 2 <LIGHT-SOURCE .ME>>>
+	<COND (<OBJECT-ACTION>)
+	      (<COND (<SET OBJ <2 ,PRSVEC>>
+		      <COND (<AND <TYPE? .OBJ OBJECT>
+				  <N==? <OLIGHT? .OBJ> 0>
+				  <MEMQ .OBJ <AOBJS .ME>>>)
+			    (T
+			     <TELL "You can't turn that on.">
+			     <RETURN T .LAMPO>)>)>
+	       <COND (<G? <OLIGHT? .OBJ> 0>
+		      <TELL "It is already on.">)
+		     (<PUT .OBJ ,OLIGHT? 1>
+		      <TELL "The " T <ODESC2 .OBJ> " is now on.">
+		      <COND (<NOT .LIT?>
+			     <ROOM-INFO <>>)>)>)
+	      (<TELL "There is nothing here to turn on.">)>>
+
+<DEFINE LAMP-OFF LAMPO ("AUX" (ME ,WINNER) OBJ)
+	#DECL ((ME) ADV (OBJ) <OR ATOM OBJECT FALSE> (LAMPO) ACTIVATION)
+	<OR <2 ,PRSVEC> <PUT ,PRSVEC 2 <LIGHT-SOURCE .ME>>>
+	<COND (<OBJECT-ACTION>)
+	      (<COND (<SET OBJ <2 ,PRSVEC>>
+		      <COND (<AND <TYPE? .OBJ OBJECT>
+				  <N==? <OLIGHT? .OBJ> 0>
+				  <MEMQ .OBJ <AOBJS .ME>>>)
+			    (<TELL "You can't turn that off.">
+			     <RETURN T .LAMPO>)>)>
+	       <COND (<L? <OLIGHT? .OBJ> 0>
+		      <TELL "It is already off.">)
+		     (<PUT .OBJ ,OLIGHT? -1>
+		      <TELL "The " T <ODESC2 .OBJ> " is now off.">)>)
+	      (<TELL "There is nothing here to turn off.">)>>
+
+<DEFINE SCORE ("OPTIONAL" (ASK? T) "AUX" SCOR)
+   #DECL ((ASK?) <OR ATOM FALSE> (SCOR) FIX)
+   <SETG TELL-FLAG T>
+   <CRLF>
+   <COND (.ASK? <PRINC "Were you to quit, your score would be ">)
+	 (<PRINC "Your score is ">)>
+   <PRIN1 <SET SCOR <+ <ASCORE ,WINNER>
+	     	       <MAPF ,+ ,OTVAL <OCONTENTS <FIND-OBJ "TROPH">>>>>>
+   <PRINC " [total of ">
+   <PRIN1 ,SCORE-MAX>
+   <PRINC " points], in ">
+   <PRIN1 ,MOVES>
+   <PRINC " moves.">
+   <CRLF>
+   <PRINC "This score gives you the rank of ">
+   <SET PCT </ <FLOAT .SCOR> <FLOAT ,SCORE-MAX>>>
+   <PRINC <COND (<1? .PCT>
+		 "Cheater")
+		(<G? .PCT .95>
+		 "Master")
+		(<G? .PCT .90>
+		 "Winner")
+		(<G? .PCT .80>
+		 "Hacker")
+		(<G? .PCT .60>
+		 "Adventurer")
+		(<G? .PCT .40>
+		 "Junior Adventurer")
+		(<G? .PCT .20>
+		 "Novice Adventurer")
+		(<G? .PCT .10>
+		 "Rank Amateur")
+		("Loser")>>
+   <PRINC ".">
+   <CRLF>>
+
+<DEFINE FINISH ("OPTIONAL" (ASK? T) "AUX" SCOR PCT)
+    #DECL ((ASK?) <OR ATOM FALSE> (SCOR) FIX (PCT) FLOAT)
+    <SCORE .ASK?>
+    <COND (<OR
+	    <AND .ASK?
+		 <TELL "Do you wish to leave the game? (Y is affirmative): ">
+		 <YES/NO>>
+	    <NOT .ASK?>>
+	   <RECORD <ASCORE ,WINNER> ,MOVES ,DEATHS .ASK? ,HERE>
+	   <QUIT>)>>
+
+"PRINT OUT DESCRIPTION OF LOSSAGE:  WHEN PLAYED, SCORE, # MOVES, ETC."
+
+<SETG RECORD-STRING <ISTRING 5>>
+
+<GDECL (RECORD-STRING) STRING>
+
+<DEFINE RECORD (SCORE MOVES DEATHS QUIT? LOC "AUX" CH (STR ,RECORD-STRING) FL (CT 0)
+		(FN "MADMAN;ZORK LOG"))
+  #DECL ((SCORE MOVES DEATHS) FIX (QUIT?) <OR ATOM FALSE> (LOC) ROOM
+	 (CH) <OR CHANNEL FALSE> (STR FN) STRING (CT FL) FIX)
+  <COND (<SET CH <OPEN "READB" .FN>>
+	 <COND (<G=? <SET FL <FILE-LENGTH .CH>> 1>
+		<ACCESS .CH <- .FL 1>>
+		<SET CT <READSTRING .STR .CH>>)>
+	 <CLOSE .CH>
+	 <SET CH <OPEN "PRINTO" .FN>>
+	 <ACCESS .CH <- .FL 1>>
+	 <PRINTSTRING .STR .CH .CT>)
+	(<SET CH <OPEN "PRINT" .FN>>)>
+  <CRLF .CH>
+  <PRINC <UNAME> .CH>
+  <PRINC "	" .CH>
+  <PDSKDATE <DSKDATE> .CH>
+  <CRLF .CH>
+  <PRIN1 .SCORE .CH>
+  <PRINC " points, " .CH>
+  <PRIN1 .MOVES .CH>
+  <PRINC " moves, " .CH>
+  <PRIN1 .DEATHS .CH>
+  <PRINC " deaths." .CH>
+  <PRINC "  In " .CH>
+  <PRINC <RID .LOC> .CH>
+  <COND (.QUIT?
+	 <PRINC ". Quit." .CH>)
+	(<PRINC ". Died." .CH>)>
+  <CRLF .CH>
+  <MAPF <>
+    <FUNCTION (X Y) #DECL ((X) ATOM (Y) STRING)
+      <COND (,.X
+	     <PRINC "/" .CH>
+	     <PRINC .Y .CH>)>>
+    ,FLAG-NAMES ,SHORT-NAMES>
+  <CLOSE .CH>>
+
+<BLOCK (<OR <GET FLAG OBLIST> <MOBLIST FLAG>> <ROOT>)>
+<SETG FLAG-NAMES!-INITIAL
+      <UVECTOR KITCHEN-WINDOW TROLL-FLAG KEY-FLAG LOW-TIDE DROWNED DOME-FLAG
+	       GLACIER-FLAG ECHO-FLAG RIDDLE-FLAG LLD-FLAG CYCLOPS-FLAG MAGIC-FLAG>>
+<ENDBLOCK>
+
+<SETG SHORT-NAMES <VECTOR "KI" "TR" "KE" "LO" "DR" "DO" "GL" "EC" "RI" "LL" "CY" "MA">>
+
+<DEFINE PDSKDATE (WD CH
+		  "AUX" (TIM <CHTYPE <GETBITS .WD <BITS 18 0>> FIX>)
+			(A/P " AM") HR)
+	#DECL ((WD) <PRIMTYPE WORD> (TIM HR) FIX (A/P) STRING (CH) CHANNEL)
+	<PRINC " ">
+	<COND (<0? <CHTYPE .WD FIX>>
+	       <PRINC "unknown " .CH>)
+	      (T
+	       <PRINC <NTH ,MONTHS <CHTYPE <GETBITS .WD <BITS 4 23>> FIX>> .CH>
+	       <PRINC " " .CH>
+	       <PRIN1 <CHTYPE <GETBITS .WD <BITS 5 18>> FIX> .CH>
+	       <PRINC " at " .CH>
+	       <SET HR </ .TIM 7200>>
+	       <COND (<G=? .HR 12> <SET HR <- .HR 12>> <SET A/P " PM">)>
+	       <COND (<0? .HR> <SET HR 12>)>
+	       <PRIN1 .HR .CH>
+	       <PRINC ":" .CH>
+	       <SET HR </ <MOD .TIM 7200> 120>>
+	       <COND (<L? .HR 10> <PRINC "0" .CH>)>
+	       <PRIN1 .HR .CH>
+	       <PRINC .A/P .CH>)>>
+
+<SETG MONTHS
+      ["January"
+       "February"
+       "March"
+       "April"
+       "May"
+       "June"
+       "July"
+       "August"
+       "September"
+       "October"
+       "November"
+       "December"]>
+
+<GDECL (MONTHS) <VECTOR [12 STRING]>>î
+
+<SETG LAMP-LOCATION <>>
+<GDECL (LAMP-LOCATION) <OR ROOM FALSE>>
+
+<DEFINE JIGS-UP (DESC "AUX" (WINNER ,WINNER) (DEATHS ,DEATHS)
+		 (AOBJS <AOBJS .WINNER>) (RANDOM-LIST ,RANDOM-LIST)
+		 (LAMP <FIND-OBJ "LAMP">))
+  #DECL ((DESC) STRING (DEATHS) FIX (AOBJS) <LIST [REST OBJECT]> (WINNER) ADV
+	 (RANDOM-LIST) <LIST [REST ROOM]> (LAMP) OBJECT)
+  <RESET ,INCHAN>
+  <COND (<G? ,DEATHS 2>
+	 <TELL
+"You clearly are a suicidal maniac.  We don't allow psychotics in the
+cave, since they may harm other adventurers.  Your remains will
+installed in the Land of the Living Dead, where your fellow adventurers 
+may gloat over them.">
+	 <FINISH <>>)
+	(<SETG DEATHS <+ ,DEATHS 1>>
+	 <TELL .DESC>
+	 <TELL
+"Do you want me to try to patch you?" <>>
+	 <COND (<NOT <YES/NO>>
+		<TELL
+"What?  You don't trust me?  Why, only last week I patched a running ITS
+and it survived for over 30 seconds.  Oh, well.">
+		<FINISH <>>)
+	       (T
+		<TELL
+"Now, let me see...
+Well, we weren't quite able to restore your state.  You can't have
+everything.">
+		<COND (,LAMP-LOCATION
+		       <SET AOBJS (.LAMP !.AOBJS)>
+		       <REMOVE-OBJECT .LAMP ,LAMP-LOCATION>
+		       <SETG LAMP-LOCATION <>>)
+		      (<MEMQ .LAMP .AOBJS>
+		       <SET AOBJS (.LAMP !<SPLICE-OUT .LAMP .AOBJS>)>)>
+		<GOTO <FIND-ROOM "FORE1">>
+		<MAPF <>
+		  <FUNCTION (X Y) #DECL ((X) OBJECT (Y) ROOM)
+		    <INSERT-OBJECT .X .Y>>
+		  .AOBJS .RANDOM-LIST>
+		<COND (<G=? <LENGTH .RANDOM-LIST> <LENGTH .AOBJS>>)
+		      (T
+		       <SET AOBJS <REST .AOBJS <LENGTH .RANDOM-LIST>>>
+		       <MAPF <>
+		         <FUNCTION (X Y) #DECL ((X) OBJECT (Y) ROOM)
+			   <INSERT-OBJECT .X .Y>>
+			 .AOBJS ,ROOMS>)>
+		<PUT .WINNER ,AOBJS ()>)>)>>
+
+<DEFMAC YES/NO ()
+  <FORM PROG ()
+    <FORM RESET <FORM GVAL INCHAN>>
+    <FORM MEMQ <FORM TYI> "TtYy">>>
+
+<DEFINE INFO ()
+  <FILE-TO-TTY "MADMAN;MADADV INFO">>
+
+<DEFINE HELP ()
+  <FILE-TO-TTY "MADMAN;MADADV HELP">>
+
+<SETG BREAKS <STRING <ASCII 3> <ASCII 0>>>
+
+<DEFINE FILE-TO-TTY (FILE "AUX" (CH <OPEN "READ" .FILE>) STR
+    (LEN <FILE-LENGTH .CH>) (BUF ,INBUF) (BUFLEN <LENGTH .BUF>)
+    (ITER </ .LEN .BUFLEN>))
+  #DECL ((BUF FILE) STRING (CH) CHANNEL (STR) STRING (ITER LEN BUFLEN) FIX)
+  <OR <0? <MOD .LEN .BUFLEN>>
+      <SET ITER <+ .ITER 1>>>
+  <CRLF ,OUTCHAN> 
+  <REPEAT (SLEN) #DECL ((SLEN) FIX)
+    <COND (<1? .ITER>
+	   <SET SLEN <READSTRING .BUF .CH ,BREAKS>>)
+	  (<SET SLEN <READSTRING .BUF .CH .BUFLEN>>)>
+    <PRINTSTRING .BUF ,OUTCHAN .SLEN>
+    <COND (<0? <SET ITER <- .ITER 1>>>
+	   <CRLF ,OUTCHAN>
+	   <RETURN <CLOSE .CH>>)>>>
+
+"PARSER & AUXILIARIES"
+
+<SETG INBUF <ISTRING 100>>
+
+;"SET UP INPUT ERROR HANDLER TO CAUSE EPARSE TO FALSE OUT"
+
+<DEFINE EPARSE (SV SILENT?
+		"AUX" (VEC ,PRSVEC) (PRS T) WORDNAME WORDVAL (VERB? <>)
+		      (WORDS ,WORDS) (OBJOB ,OBJECT-OBL) ARG-MIN ARG-MAX
+		      (ARG-NUM 0))
+   #DECL ((SV) <VECTOR [REST STRING]> (VEC) <VECTOR [3 ANY]>
+	  (PRS SILENT?) <OR FALSE ATOM> (WORDNAME) <OR ATOM FALSE>
+	  (WORDVAL) <OR ATOM BUZZ OBJECT DIRECTION VERB> (VERB?) <OR FALSE
+								     VERB>
+	  (WORDS OBJOB) OBLIST (ARG-MIN ARG-MAX ARG-NUM) FIX)
+   <PUT .VEC 1 <>>
+   <PUT .VEC 2 <>>
+   <PUT .VEC 3 <>>
+   <COND
+    (<EMPTY? <1 .SV>>)
+    (<SET PRS
+      <MAPF <>
+       <FUNCTION (X) 
+	       #DECL ((X) STRING)
+	       <COND (<EMPTY? .X> <MAPLEAVE T>)>
+	       <COND (<NOT .VERB?>
+		      <COND (<AND <SET WORDNAME <LOOKUP .X .WORDS>>
+				  <GASSIGNED? .WORDNAME>>
+			     <COND (<TYPE? <SET WORDVAL ,.WORDNAME> VERB>
+				    <SET VERB? .WORDVAL>
+				    <SET ARG-MAX <VMAX .VERB?>>
+				    <SET ARG-MIN <VARGS .VERB?>>
+				    <PUT .VEC 1 .VERB?>)
+				   (<TYPE? .WORDVAL DIRECTION>
+				    <SET VERB? ,WALK!-WORDS>
+				    <SET ARG-MAX 1>
+				    <SET ARG-MIN 1>
+				    <SET ARG-NUM 1>
+				    <PUT .VEC 1 .VERB?>
+				    <PUT .VEC 2 .WORDVAL>
+				    <MAPLEAVE T>)
+				   (<TYPE? .WORDVAL BUZZ>)
+				   (<OR .SILENT? <TELL "I can't parse that.">>
+				    <MAPLEAVE <>>)>)
+			    (T
+			     <COND (<LOOKUP .X <GET OBJECTS OBLIST>>
+				    <OR .SILENT?
+					<TELL "What should I do with it?">>)
+				   (<OR .SILENT?
+					<TELL "I don't know how to do that.">>)>
+			     <MAPLEAVE <>>)>)
+		     (<OR <SET WORDNAME <LOOKUP .X .OBJOB>>
+			  <SET WORDNAME <LOOKUP .X .WORDS>>>
+		      <COND (<GASSIGNED? .WORDNAME> <SET WORDVAL ,.WORDNAME>)
+			    (<SET WORDVAL .WORDNAME>)>
+		      <COND (<TYPE? .WORDVAL BUZZ>)
+			    (<TYPE? .WORDVAL OBJECT ATOM>
+			     <SET ARG-NUM <+ .ARG-NUM 1>>
+			     <COND (<2 .VEC> <PUT .VEC 3 .WORDVAL>)
+				   (<PUT .VEC 2 .WORDVAL>)>)
+			    (<TYPE? .WORDVAL DIRECTION>
+			     <COND (<2 .VEC>
+				    <OR .SILENT? <TELL "I can't parse that.">>
+				    <MAPLEAVE <>>)
+				   (<PUT .VEC 2 .WORDVAL>
+				    <SET ARG-NUM <+ .ARG-NUM 1>>
+				    <MAPLEAVE T>)>)>)
+		     (T
+		      <OR .SILENT? <TELL "I don't know that word.">>
+		      <MAPLEAVE <>>)>>
+       .SV>>
+     <COND (<NOT .VERB?> <OR .SILENT? <TELL "Huh?">>)
+	   (<AND <L=? .ARG-NUM .ARG-MAX> <G=? .ARG-NUM .ARG-MIN>>
+	    <COND (<VACTION? .VERB?>
+		   <COND (<TYPE? <2 .VEC> DIRECTION>
+			  <OR .SILENT? <TELL "You can't do that!">>
+			  <SET PRS <>>)>)
+		  (T
+		   <COND (<NOT <TYPE? <2 .VEC> DIRECTION>>
+			  <OR .SILENT? <TELL "Go where?">>
+			  <SET PRS <>>)>)>)
+	   (T
+	    <COND (<EMPTY? <VSTR .VERB?>>
+		   <OR .SILENT? <TELL "I don't understand.">>)
+		  (T <OR .SILENT? <TELL <VSTR .VERB?>>>)>
+	    <SET PRS <>>)>)>
+   .PRS>
+
+<SETG PRSVEC <IVECTOR 3 #FALSE ()>>
+
+<DEFINE WORD? (W)
+	<LOOKUP .W ,WORDS>>
+
+<SETG BRKS " 	:;.,?!
+">
+
+<SETG LEXV <IVECTOR 10 '<REST <ISTRING 5> 5>>>
+
+<GDECL (LEXV) <VECTOR [REST STRING]>>
+
+<DEFINE LEX (S
+	     "OPTIONAL" (SX <REST .S <LENGTH .S>>) (SILENT? <>)
+	     "AUX" (BRKS ,BRKS) (V ,LEXV) (S1 .S) ST C)
+   #DECL ((C ST) <OR STRING FALSE> (S S1 SX BRKS) STRING (SILENT?) <OR ATOM FALSE>
+	  (VALUE) <OR FALSE VECTOR> (V) <VECTOR [REST STRING]>)
+   <MAPR <>
+	 <FUNCTION (X "AUX" (STR <1 .X>)) 
+		 #DECL ((X) <VECTOR [REST STRING]> (STR) STRING)
+		 <PUT .X 1 <REST .STR <LENGTH .STR>>>>
+	 .V>
+   <REPEAT (SLEN)
+     #DECL ((SLEN) FIX)
+     <COND
+      (<OR <==? <LENGTH .S1> <LENGTH .SX>> <MEMQ <1 .S1> .BRKS>>
+       <COND
+	(<N==? .S .S1>
+	 <COND (<EMPTY? .V> <OR .SILENT? <TELL "I'm too simple-minded for that.">>)
+	       (<PUT .V
+		     1
+		     <UPPERCASE
+		      <SUBSTRUC .S
+				0
+				<SET SLEN <MIN <- <LENGTH .S> <LENGTH .S1>> 5>>
+				<BACK <1 .V> .SLEN>>>>
+		<SET V <REST .V>>)>)>
+       <COND (<==? <LENGTH .S1> <LENGTH .SX>> <RETURN .V>)>
+       <SET S <REST .S1>>)>
+     <SET S1 <REST .S1>>>
+   ,LEXV>
+
+<DEFINE ANYTHING (S SX)
+	#DECL ((S SX) STRING)
+	<MAPR <>
+	      <FUNCTION (X)
+		 <COND (<==? .X .SX> <MAPLEAVE <>>)
+		       (<NOT <MEMQ <1 .X> ,BRKS>> <MAPLEAVE .X>)>>
+	      .S>>
+
+
+
+<DEFINE UPPERCASE (STR) 
+	<MAPR <>
+	      <FUNCTION (S "AUX" (C <ASCII <1 .S>>)) 
+		      <COND (<AND <G? .C 96> <L=? .C 122>>
+			     <PUT .S 1 <ASCII <- .C 32>>>)>>
+	      .STR>
+	.STR>
+
+
+"STUFF FOR ADDING TO VOCABULARY, ADDING TO LISTS (OF DEMONS, FOR EXAMPLE)."
+
+<DEFINE ACT-HACK () <COND (<OBJECT-ACTION>) (<CRLF>)>>
+
+<DEFINE ADD-WORD (W) 
+	#DECL ((W) STRING)
+	<OR <LOOKUP .W ,WORDS> <INSERT .W ,WORDS>>>
+
+<DEFINE ADD-ACTION (NAM "OPTIONAL" (FCN <>) (ARGS 0) (STR "") (ACTION? T) (MAX-ARGS 2)
+		    "AUX" ATM)
+	#DECL ((NAM STR) STRING (ARGS) FIX (FCN) <OR APPLICABLE FALSE>
+	        (ATM) <OR ATOM FALSE> (ACTION?) <OR ATOM FALSE> (MAX-ARGS) FIX)
+	<SET ATM <ADD-WORD .NAM>>
+	<SETG .ATM <CHTYPE [.ATM .FCN .ARGS .STR .ACTION? .MAX-ARGS] VERB>>
+	.ATM>
+
+<DEFINE ADD-BUZZ ("TUPLE" W)
+	#DECL ((W) <TUPLE [REST STRING]>)
+	<MAPF <>
+	      <FUNCTION (X)
+		#DECL ((X) STRING)
+		<SETG <ADD-WORD .X>
+		      <CHTYPE .X BUZZ>>>
+	      .W>>
+
+<DEFINE ADD-DIRECTION ("TUPLE" W)
+	#DECL ((W) <TUPLE [REST STRING]>)
+	<MAPF <>
+	      <FUNCTION (X "AUX" ATM)
+		#DECL ((X) STRING (ATM) ATOM)
+		<SETG <SET ATM <ADD-WORD .X>>
+		      <CHTYPE .ATM DIRECTION>>>
+	      .W>>
+
+<DEFINE ADD-OBJECT (OBJ "TUPLE" NAMES "AUX" (OBJS ,OBJECT-OBL))
+	#DECL ((OBJ) OBJECT (NAMES) <TUPLE [REST STRING]> (OBJS) OBLIST)
+	<MAPF <>
+	  <FUNCTION (X "AUX" ATM) #DECL ((X) STRING (ATM) <OR ATOM FALSE>)
+	    <SETG <OR <LOOKUP .X .OBJS>
+		      <INSERT .X .OBJS>> .OBJ>>
+	  .NAMES>>
+
+<DEFINE SYNONYM (N1 "TUPLE" N2 "AUX" ATM VAL)
+	#DECL ((N1) STRING (N2) <TUPLE [REST STRING]> (ATM) <OR FALSE ATOM> (VAL) ANY)
+	<COND (<SET ATM <LOOKUP .N1 ,WORDS>>
+	       <SET VAL <GVAL .ATM>>
+	       <MAPF <>
+		     <FUNCTION (X)
+			  <SETG <ADD-WORD .X> .VAL>>
+		     .N2>)>>
+
+<DEFINE ADD-ABBREV (X Y "AUX" ATM)
+	#DECL ((X Y) STRING (ATM) <OR ATOM FALSE>)
+	<SETG <ADD-WORD .X>
+	      <OR <LOOKUP .Y ,WORDS>
+		  <INSERT .Y ,WORDS>>>>
+
+<DEFINE ADD-VICTIM (X)
+	#DECL ((X) OBJECT)
+	<SETG VICTIMS (.X !,VICTIMS)>>
+
+<DEFINE ADD-DEMON (X)
+	#DECL ((X) HACK)
+	<SETG DEMONS (.X !,DEMONS)>>

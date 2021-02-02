@@ -1,0 +1,286 @@
+
+<SETG ORPHAN-NAME <>>
+
+<SETG AVEC <IVECTOR 10 <>>>
+
+<SETG SCRSTR <REST <ISTRING 5> 5>>
+
+<DEFINE EPARSE (SV VB
+		"AUX" (WORDS ,WORDS) (OBJOB ,OBJECT-OBL) (PPREP ,PTEMP)
+		      (AVEC <REST ,AVEC <LENGTH ,AVEC>>) (VERB <>) (PREP <>)
+		      (ADJ <>) (VEC ,PRSVEC) ARG VDECL)
+   #DECL ((WORDS OBJOBL) OBLIST (SV AVEC) VECTOR (VB) <OR ATOM FALSE>
+	  (ADJ) <OR ADJECTIVE FALSE> (VERB) <OR FALSE VERB> (VDECL) VDECL
+	  (PREP) <OR FALSE PREP> (PPREP) PHRASE (VEC) VECTOR
+	  (ARG) <OR FALSE VECTOR>)
+   <PROG ()
+     <COND						  ;"CHECK FOR VERB HERE"
+      (<NOT <MAPF <>
+		  <FUNCTION (W) 
+			  #DECL ((W) STRING)
+			  <COND (<EMPTY? .W> <MAPLEAVE T>)
+				(<SET ATM <LOOKUP .W .WORDS>>
+				 <COND (<TYPE? <SET AVAL ,.ATM> VERB>
+					<AND .VERB
+					     <OR .VB
+						 <TELL "I can't parse that.">>
+					     <MAPLEAVE <>>>
+					<SET VERB .AVAL>)>
+				 T)
+				(T)>>
+		  .SV>>
+       <RETURN <>>)				      ;"GET ORPHAN VERB, IF ANY"
+      (<AND <OR .VERB <SET VERB ,ORPHAN-VERB>> <SETG ORPHAN-VERB <>>>)
+				       ;"ATTEMPT TO CONS UP OBJECTS AND PHRASES"
+      (<MAPF <>
+	<FUNCTION (W "AUX" ATM) 
+	   #DECL ((W) STRING (ATM) <OR FALSE ATOM> (AVAL) ANY
+		  (WW) <OR STRING FALSE>)
+	   <COND
+	    (<EMPTY? .W> <MAPLEAVE T>)
+	    (<AND <SET ATM <LOOKUP .W .WORDS>>
+		  <SET AVAL ,.ATM>
+		  <COND (<TYPE? .AVAL DIRECTION>
+			 <SET VERB ,WALK!-WORDS>
+			 <PUT <SET AVEC <BACK .AVEC>> 1 .AVAL>
+			 <MAPLEAVE T>)
+			(<TYPE? .AVAL ADJECTIVE>
+			 <SET ADJ .AVAL>
+			 <OR <NOT <SET WW ,ORPHAN-NAME>>
+			     <SETG ORPHAN-NAME <>>
+			     <NOT <SET W .WW>>>)
+			(<TYPE? .AVAL PREP> <PUT .PPREP 1 <SET PREP .AVAL>>)
+			(T)>>
+	     T)
+	    (<SET ATM <LOOKUP .W .OBJOB>>
+	     <SET OBJ <GET-OBJECT .ATM .ADJ>>
+	     <SET ADJ <>>
+	     <COND (.OBJ
+		    <PUT <SET AVEC <BACK .AVEC>>
+			 1
+			 <COND (.PREP <SET PREP <>> <PUT .PPREP 2 .OBJ>)
+			       (.OBJ)>>)
+		   (T
+		    <COND (<EMPTY? .OBJ>
+			   <OR .VB <TELL "I can't see that here.">>)
+			  (<NOT .VERB> <OR .VB <TELL "Huh?">>)
+			  (<OR .VB <TELL "Which one?">>
+			   <SETG ORPHAN-VERB .VERB>
+			   <SETG ORPHAN-NAME
+				 <SUBSTRUC .W
+					   0
+					   <LENGTH .W>
+					   <BACK ,SCRSTR <LENGTH .W>>>>)>
+		    <MAPLEAVE <>>)>)
+	    (<OR .VB <TELL "I don't know that word.">>
+	     <MAPLEAVE <>>)>>
+	.SV>			       ;"SET UP ORPHAN OBJECT IF VERB NOT GIVEN"
+       <AND <NOT .VERB>
+	    <COND (<N==? <LENGTH .AVEC> 1> <OR .VB <TELL "Huh?">>)
+		  (<TYPE? <1 .AVEC> OBJECT>
+		   <SETG ORPHAN-OBJECT <1 .AVEC>>
+		   <OR .VB <TELL "What should I do with it?">>)>
+	    <RETURN <>>>					  ;"CLEAR SLOTS"
+       <SET VDECL <VARGS .VERB>>
+       <PUT .VEC 2 <>>
+       <PUT .VEC 3 <>>					  ;"VERB SYNTAX CHECKER"
+       <COND
+	(<OR <EMPTY? .AVEC>
+	     <MAPF <>
+		   <FUNCTION (X) 
+			   #DECL ((X) <OR DIRECTION OBJECT PHRASE FALSE>)
+			   <COND (<NOT .X> <MAPLEAVE T>)
+				 (<SET SL <FIND-SLOT .X .VDECL .VEC>>
+				  <PUT .VEC .SL .X>)
+				 (<OR .VB <TELL "I can't parse that.">>
+				  <MAPLEAVE <>>)>>
+		   .AVEC>>
+	 <AND <SET ARG <ARG1 .VDECL>>
+	      <NOT <2 .VEC>>
+	      <OR <AND <SET OBJ <ARG-MUNG .ARG .VERB .VEC .VB>>
+		       <PUT .VEC 2 .OBJ>>
+		  <RETURN <>>>>
+	 <AND <SET ARG <ARG2 .VDECL>>
+	      <NOT <3 .VEC>>
+	      <OR <AND <SET OBJ <ARG-MUNG .ARG .VERB .VEC .VB>>
+		       <PUT .VEC 3 .OBJ>>
+		  <RETURN <>>>>
+	 <PUT .VEC 1 .VERB>
+	 T)>)>>>
+
+<DEFINE ARG-MUNG (ARG VERB VEC VB "AUX" OBJ SP)
+    #DECL ((ARG VEC) VECTOR (VERB) VERB (OBJ) <OR OBJECT FALSE>
+	   (VB) <OR ATOM FALSE> (SP) STRING)
+    <COND (<==? <ATYPE .ARG> OBJECT>
+ 	   <COND (<OR <SET OBJ ,ORPHAN-OBJECT>
+	              <AND <TYPE? <ASPEC .ARG> FIND>
+		    	   <SET OBJ <GWIM <ASPEC .ARG> .VERB>>>>
+		  <SETG ORPHAN-OBJECT <>>
+		  .OBJ)
+		 (<SETG ORPHAN-VERB .VERB>
+		  <OR .VB <TELL <VSTR .VERB> T " what?">>
+		  <>)>)
+	  (<==? <ATYPE .ARG> PHRASE>
+	   <SETG ORPHAN-OBJECT <2 .VEC>>
+	   <SETG ORPHAN-VERB .VERB>
+	   <TELL <FOOSTR <SET SP <SPNAME <CHTYPE <1 <ASPEC .ARG>> ATOM>>>
+			 <BACK ,SCRSTR <LENGTH .SP>>>
+		 T
+		 " what?">
+  	   <>)>>
+
+
+<DEFINE FIND-SLOT (FROB VDECL VEC "AUX" (SLOT 0)) 
+	#DECL ((FROB) <OR DIRECTION OBJECT PHRASE> (VDECL) VDECL (VEC) VECTOR
+	       (SLOT) FIX)
+	<COND (<AND <ARG1 .VDECL> <==? <TYPE .FROB> <ATYPE <ARG1 .VDECL>>>>
+	       <COND (<NOT <2 .VEC>> <SET SLOT ,ARG1>)>)>
+	<COND (<AND <ARG2 .VDECL> <==? <TYPE .FROB> <ATYPE <ARG2 .VDECL>>>>
+	       <COND (<NOT <3 .VEC>> <SET SLOT ,ARG2>)>)>
+	<COND (<N==? .SLOT 0>
+	       <AND <OK-SLOT <NTH .VDECL .SLOT> .FROB> <+ 1 .SLOT>>)>>
+
+<DEFINE OK-SLOT (VEC FROB "AUX" (SPEC <ASPEC .VEC>)) 
+	#DECL ((SPEC) <OR ATOM FIND VECTOR>
+	       (FROB) <OR DIRECTION OBJECT PHRASE> (VEC) <VECTOR ATOM ANY>)
+	<COND (<TYPE? .FROB DIRECTION>)
+	      (<TYPE? .FROB OBJECT>
+	       <COND (<TYPE? .SPEC FIND>)
+		     (<==? .SPEC ANY>)
+		     (<==? .SPEC VICTIM> <MEMQ .FROB ,VICTIMS>)>)
+	      (<AND <==? <1 .SPEC> <PPREP .FROB>>
+		    <OR <AND <==? <2 .SPEC> VICTIM>
+			     <MEMQ <POBJ .FROB> ,VICTIMS>>
+			<==? <2 .SPEC> OBJECT>>>)>>
+				  
+"GET-OBJECT:  TAKES ATOM (FROM OBJECTS OBLIST), VERBOSITY FLAG.  GROVELS
+OVER: ,STARS; ,HERE; ,WINNER LOOKING FOR OBJECT (LOOKS DOWN TO ONE LEVEL
+OF CONTAINMENT).  RETURNS <> IF NOT FOUND OR FOUND MORE THAN ONE, THE
+OBJECT OTHERWISE."
+
+<DEFINE GET-OBJECT GET-OBJ (OBJNAM ADJ "AUX" OBJ (OOBJ <>)) 
+	#DECL ((OOBJ OBJ) <OR OBJECT FALSE> (OBJNAM) ATOM
+	       (ADJ) <OR ADJECTIVE FALSE>
+	       (OBJL) <OR FALSE <LIST [REST OBJECT]>>)
+	<COND (<SET OBJ <SEARCH-LIST .OBJNAM ,STARS .ADJ>> <SET OOBJ .OBJ>)
+	      (<NOT <EMPTY? .OBJ>> <RETURN ,NEFALS .GET-OBJ>)>
+	<COND (<SET OBJ <SEARCH-LIST .OBJNAM <ROBJS ,HERE> .ADJ>>
+	       <COND (.OOBJ <RETURN ,NEFALS .GET-OBJ>) (<SET OOBJ .OBJ>)>)
+	      (<NOT <EMPTY? .OBJ>> <RETURN ,NEFALS .GET-OBJ>)>
+	<COND (<SET OBJ <SEARCH-LIST .OBJNAM <AOBJS ,WINNER> .ADJ>>
+	       <COND (.OOBJ ,NEFALS) (.OBJ)>)
+	      (<NOT <EMPTY? .OBJ>> ,NEFALS)
+	      (.OOBJ)
+	      (<NOT <OR <NOT <EMPTY? .OBJ>> <NOT <EMPTY? .OOBJ>>>> <>)>>
+
+"SEARCH-LIST:  TAKES OBJECT NAME, LIST OF OBJECTS, AND VERBOSITY.
+IF FINDS ONE FROB UNDER THAT NAME ON LIST, RETURNS IT.  SEARCH IS TO
+ONE LEVEL OF CONTAINMENT."
+
+<SETG NEFALS #FALSE (1)>
+
+<DEFINE SEARCH-LIST SL (OBJNAM SLIST ADJ "AUX" (OOBJ <>)) 
+   #DECL ((OBJNAM) ATOM (SLIST) <LIST [REST OBJECT]>
+	  (OOBJ NOBJ) <OR FALSE OBJECT> (ADJ) <OR FALSE ADJECTIVE>)
+   <MAPF <>
+    <FUNCTION (OBJ) 
+	    #DECL ((OBJ) OBJECT)
+	    <COND (<THIS-IT? .OBJNAM .OBJ .ADJ>
+		   <COND (.OOBJ <RETURN ,NEFALS .SL>) (<SET OOBJ .OBJ>)>)>
+	    <COND
+	     (<AND <OVIS? .OBJ> <OR <OOPEN? .OBJ> <TRANSPARENT? .OBJ>>>
+	      <MAPF <>
+		    <FUNCTION (OBJ) 
+			    #DECL ((OBJ) OBJECT)
+			    <COND (<THIS-IT? .OBJNAM .OBJ .ADJ>
+				   <COND (.OOBJ <RETURN ,NEFALS .SL>)
+					 (<SET OOBJ .OBJ>)>)>>
+		    <OCONTENTS .OBJ>>)>>
+    .SLIST>
+   .OOBJ>
+
+"GET WHAT I MEAN - GWIM
+ TAKES BIT TO CHECK AND WHERE TO CHECK AND WINS TOTALLY"
+
+<DEFINE GWIM (FSPEC VERB
+	      "AUX" (BIT <FBIT .FSPEC>) (AOBJ <FAOBJ .FSPEC>) (NTAKE <FTAKE .FSPEC>)
+		    (ROBJ <FROBJ .FSPEC>) OBJ NOBS (PV ,PRSVEC))
+	#DECL ((FSPEC) FIND (BIT) FIX (NTAKE ROBJ AOBJ) <OR ATOM FALSE>
+	       (OBJ NOBJ) <OR OBJECT FALSE> (PV) VECTOR (VERB) VERB)
+	<AND .AOBJ <SET OBJ <FWIM .BIT <AOBJS ,WINNER> .NTAKE>>>
+	<COND (.ROBJ
+	       <COND (<SET NOBJ <FWIM .BIT <ROBJS ,HERE> .NTAKE>>
+		      <AND <NOT .OBJ>
+			   <PUT .PV 1 ,TAKE!-WORDS>
+			   <PUT .PV 2 .NOBJ>
+			   <OR <==? .VERB <1 .PV>>
+			       .NTAKE
+			       <TAKE>>
+			   .NOBJ>)
+		     (.OBJ)>)
+	      (.OBJ)>>
+
+"FWIM:  TAKE LIST OF FROBS, FIND ONE THAT CAN BE MANIPULATED (VISIBLE
+AND TAKEABLE, OR VISIBLE AND IN SOMETHING THAT'S VISIBLE AND OPEN)"
+
+<DEFINE FWIM DWIM (BIT OBJS NO-TAKE "AUX" (NOBJ <>))
+  #DECL ((NO-TAKE) <OR ATOM FALSE> (BIT) FIX (OBJS) <LIST [REST OBJECT]>
+	 (NOBJ) <OR FALSE OBJECT>)
+  <MAPF <>
+	<FUNCTION (X) #DECL ((X) OBJECT)
+		  <COND (<AND <OVIS? .X>
+			      <OR .NO-TAKE <CAN-TAKE? .X>>
+			      <TRNN .X .BIT>>
+			 <COND (.NOBJ
+				<RETURN <> .DWIM>)>
+			 <SET NOBJ .X>)>
+		  <COND (<AND <OVIS? .X>
+			      <OOPEN? .X>>
+			 <MAPF <>
+			       <FUNCTION (X) #DECL ((X) OBJECT)
+					 <COND (<AND <OVIS? .X>
+						     <TRNN .X .BIT>>
+						<COND (.NOBJ
+						       <RETURN <> .DWIM>)
+						      (<SET NOBJ .X>)>)>>
+			       <OCONTENTS .X>>)>>
+	.OBJS>
+  .NOBJ>
+
+<DEFINE ADD-ACTION (NAM "OPTIONAL" (FCN <>) (ARGS [<> <>]) "AUX" ATM) 
+	#DECL ((NAM) STRING (ARGS) VECTOR (FCN) <OR APPLICABLE FALSE>
+	       (ATM) <OR ATOM FALSE>)
+	<SET ATM <ADD-WORD .NAM>>
+	<SETG .ATM <CHTYPE [.ATM
+			    .FCN
+			    <CHTYPE .ARGS VDECL>
+			    <FOOSTR .NAM <ISTRING <LENGTH .NAM>>>] VERB>>
+	.ATM>
+
+<DEFINE FOOSTR (NAM STR)
+    #DECL ((STR NAM) STRING)
+    <MAPR <>
+	<FUNCTION (X Y)
+	    #DECL ((X Y) STRING)
+	    <COND (<==? .X .NAM>
+		   <PUT .Y 1 <1 .X>>)
+		  (<PUT .Y 1 <CHTYPE <+ 32 <ASCII <1 .X>>> CHARACTER>>)>>
+	.NAM
+	.STR>
+    .STR>
+
+<DEFINE FIND-PREP (STR "AUX" ATM)
+   #DECL ((STR) STRING (ATM) <OR ATOM FALSE>)
+   <COND (<SET ATM <LOOKUP .STR ,WORDS>>
+	  <COND (<TYPE? ,.ATM PREP>
+		 ,.ATM)
+		(<ERROR NO-PREP!-ERRORS .STR>)>)
+	 (<ERROR NO-PREP!-ERRORS .STR>)>>
+
+<DEFINE FIND-SPEC (BIT "TUPLE" ATM "AUX" (V <IVECTOR 4 <>>)) 
+	#DECL ((BIT) FIX (ATM) <TUPLE [REST ATOM]>)
+	<PUT .V 1 .BIT>
+	<AND <MEMQ AOBJS .ATM> <PUT .V 2 T>>
+	<AND <MEMQ ROBJS .ATM> <PUT .V 3 T>>
+	<AND <MEMQ NO-TAKE .ATM> <PUT .V 4 T>>
+	<CHTYPE .V FIND>>

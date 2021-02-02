@@ -1,0 +1,25 @@
+All commands should be terminated with altmode, due to an
+implementation restriction.
+You are talking to an extremely stupid parser.  It understands sentences
+of the following types:
+one word:  must be a direction ("North" or "N", "Down" or "D", etc.;),
+     an action which requires no object ("Light", "Enter",...) or a
+     magic word, if you know one.  Some words, such as articles and
+     prepositions, are ignored:  "The north" is just like "North".  In
+     addition, "Inventory" lists your possessions, and "Look" gives the
+     long description of the room you're currently in, with its
+     contents.
+two word:  "Take frobozz", "Kick chomper", and so on.
+three word:  Typically a sentence which has an object and a target: 
+     "Throw the spear at the snake," for example.  "Throw spear snake"
+     will work, as, strangely, will "Throw snake spear."  "Throw spear"
+     will work if there is something reasonable to throw it at;
+     otherwise it is usually like "Drop spear."  Some objects may do
+     something else when thrown.
+All words are five letters long; anything extra is discarded.  Objects
+frequently have several names, and there may be several ways of
+performing the same action.  "Walk north" is like "North", for example. 
+Some verbs are meaningful only in certain contexts:  you usually can't
+"Give" something unless there is something there to take it; to "Eat"
+you have to have some food.  Some verbs aren't known at all;
+usually you'll find out about them the hard way.  Etc.

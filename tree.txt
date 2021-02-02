@@ -1,0 +1,89 @@
+zork
+├── [Feb  2 13:28]  9005143
+│   ├── [Feb  2 13:19]  ar2.tv
+│   │   ├── [May 30  1977]  check.4
+│   │   ├── [May 29  1977]  check.nbin
+│   │   ├── [Jun 16  1977]  gc.8
+│   │   ├── [Jun 16  1977]  gc.nbin
+│   │   ├── [May 23  1977]  holida.11
+│   │   ├── [May 21  1977]  mar._ddt_
+│   │   ├── [Jan 23  1977]  recrea.11
+│   │   ├── [Feb  9  1977]  recrea.gbin
+│   │   ├── [Jan 23  1977]  recrea.nbin
+│   │   ├── [Dec 19  1976]  ssname.1
+│   │   ├── [Dec 19  1976]  ssname.nbin
+│   │   ├── [Jun 23  1977]  trivia.9
+│   │   ├── [May 30  1977]  trv.glue
+│   │   ├── [Apr 28  1977]  trv.maker
+│   │   ├── [May 20  1977]  tvbug.165
+│   │   ├── [Apr 23  1977]  unused.6
+│   │   ├── [Apr 23  1977]  unused.nbin
+│   │   └── [Jun 30  1977]  zork.3
+│   ├── [Feb  2 13:38]  ar2.txt
+│   ├── [Jan 15 15:48]  madman
+│   │   └── [Jul  1  1977]  madadv.save
+│   ├── [Jan 15 15:48]  marc
+│   │   ├── [Jul  1  1977]  }defs.1
+│   │   ├── [Jun 30  1977]  defs.81
+│   │   ├── [Jun 30  1977]  defs.82
+│   │   ├── [Jul  1  1977]  defs.83
+│   │   ├── [Jul  1  1977]  defs.84
+│   │   ├── [Jul  1  1977]  defs.85
+│   │   ├── [Jul  1  1977]  defs.86
+│   │   ├── [Jul  1  1977]  defs.87
+│   │   ├── [Jul  1  1977]  defs.nbin
+│   │   ├── [Jul  1  1977]  defs.record
+│   │   ├── [Jun 30  1977]  mazer.78
+│   │   ├── [Jun 30  1977]  mazer.79
+│   │   ├── [Jul  1  1977]  mazer.80
+│   │   ├── [Jul  1  1977]  mazer.nbin
+│   │   ├── [Jun 30  1977]  nguts.maker
+│   │   ├── [Jul  1  1977]  nparse.20
+│   │   ├── [Jul  1  1977]  nparse.21
+│   │   ├── [Jul  1  1977]  nparse.22
+│   │   ├── [Jul  1  1977]  nparse.23
+│   │   ├── [Jul  1  1977]  nparse.24
+│   │   ├── [Jul  1  1977]  nparse.25
+│   │   ├── [Jul  1  1977]  nparse.26
+│   │   ├── [Jul  1  1977]  nparse.27
+│   │   ├── [Jul  1  1977]  nparse.28
+│   │   ├── [Jul  1  1977]  nrooms.10
+│   │   ├── [Jul  1  1977]  nrooms.11
+│   │   ├── [Jul  1  1977]  nrooms.12
+│   │   ├── [Jul  1  1977]  nrooms.13
+│   │   ├── [Jul  1  1977]  nrooms.14
+│   │   ├── [Jul  1  1977]  nrooms.15
+│   │   ├── [Jul  1  1977]  nrooms.16
+│   │   ├── [Jun 30  1977]  nrooms.9
+│   │   ├── [Jun 29  1977]  rooms.241
+│   │   ├── [Jun 29  1977]  rooms.245
+│   │   ├── [Jun 26  1977]  rooms.nbin
+│   │   ├── [Jun 30  1977]  ts.zork
+│   │   ├── [Jun 29  1977]  tvdefs.18
+│   │   ├── [Jun 27  1977]  tvguts.149
+│   │   └── [Jun 27  1977]  tvguts.nbin
+│   └── [Jan 15 15:48]  taa
+│       ├── [Jun 30  1977]  ar2.tv
+│       ├── [Jun 28  1977]  tell.35
+│       └── [Jun 28  1977]  tell.xbin
+├── [Jan 15 15:48]  9005183
+│   ├── [Jan 15 15:48]  madman
+│   │   ├── [Jun 14  1977]  madadv.info
+│   │   └── [Jun 14  1977]  madadv.save
+│   ├── [Jan 15 15:48]  marc
+│   │   ├── [Jun 14  1977]  rooms.154
+│   │   ├── [Jun 14  1977]  rooms.155
+│   │   └── [Jun 14  1977]  rooms.nbin
+│   └── [Jan 15 15:48]  taa
+│       ├── [Jun 13  1977]  foo.gbin
+│       ├── [Jun  8  1977]  frob.glue
+│       ├── [Jun  8  1977]  frob.maker
+│       ├── [Jun  8  1977]  tell.3
+│       └── [Jun  8  1977]  tell.nbin
+└── [Jan 15 15:48]  9006255
+    └── [Jan 15 15:48]  madman
+        ├── [Jun  6  1977]  madadv.help
+        ├── [Jun  7  1977]  madadv.info
+        └── [Jun 12  1977]  madadv.save
+
+11 directories, 75 files

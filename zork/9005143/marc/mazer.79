@@ -1,0 +1,229 @@
+
+<MOBLIST FLAG 17>
+
+<SETG NULL-DESC "">
+
+<SETG NULL-EXIT <CHTYPE [] EXIT>>
+
+<SETG NULL-SYN ![]>
+
+<DEFINE CEXIT (FLID RMID "OPTIONAL" (STR <>) (FLAG <>))
+	#DECL ((STR) <OR FALSE STRING> (FLID RMID) <OR ATOM STRING>
+	       (ATM) <OR ATOM FALSE> (FLAG) <OR ATOM FALSE>)
+	<COND (<TYPE? .FLID ATOM> <SET FLID <SPNAME .FLID>>)>
+	<SET ATM <OR <LOOKUP .FLID <GET FLAG OBLIST>>
+		     <INSERT .FLID <GET FLAG OBLIST>>>>
+	<SETG .ATM .FLAG>
+	<CHTYPE <VECTOR .ATM <FIND-ROOM .RMID> .STR> CEXIT>>
+
+<DEFINE EXIT ("TUPLE" PAIRS "AUX" (WOBL ,WORDS)
+	      (FROB <IVECTOR <LENGTH .PAIRS>>))
+	#DECL ((PAIRS) <TUPLE [REST STRING <OR NEXIT CEXIT STRING ATOM>]>
+	       (DIR) <LIST [REST ATOM]> (FROB) VECTOR)
+	<REPEAT (ATM RM (F .FROB))
+	  #DECL ((ATM) <OR ATOM FALSE> (RM) <OR ROOM FALSE> (F) VECTOR)
+	  <COND (<OR
+		  <AND <SET ATM <LOOKUP <1 .PAIRS> .WOBL>>
+		       <GASSIGNED? .ATM>
+		       <TYPE? ,.ATM DIRECTION>>>
+		 <PUT .F 1 .ATM>
+		 <COND (<TYPE? <2 .PAIRS> STRING>
+			<PUT .F 2 <FIND-ROOM <2 .PAIRS>>>)
+		       (<PUT .F 2 <2 .PAIRS>>)>
+		 <SET F <REST .F 2>>)
+		(T
+		 <PUT .PAIRS 1 <ERROR ILLEGAL-DIRECTION <1 .PAIRS>>>)>
+	  <COND (<EMPTY? <SET PAIRS <REST .PAIRS 2>>>
+		 <RETURN>)>>
+	<CHTYPE .FROB EXIT>>
+
+<DEFINE ROOM (ID D1 D2 LIT? EX "OPTIONAL" (OBJS ()) (APP <>) (VAL 0))
+	#DECL ((ID) <OR STRING ATOM> (D1 D2) STRING (LIT?) <OR ATOM FORM FALSE>
+	       (EX) EXIT (APP) <OR FORM FALSE ATOM> (VAL) FIX)
+        <SETG SCORE-MAX <+ ,SCORE-MAX .VAL>>
+	<PUT
+	 <PUT
+	  <PUT
+	   <PUT
+	    <PUT
+	     <PUT
+	      <PUT <FIND-ROOM .ID>
+		   ,RLIGHT?
+		   <COND (<TYPE? .LIT? FORM> <>)
+			 (T .LIT?)>>
+	      ,RVAL .VAL>
+	     ,ROBJS .OBJS>
+	    ,RDESC1 .D1>
+	   ,RDESC2 .D2>
+	  ,REXITS .EX>
+	 ,RACTION
+	 <COND (<TYPE? .APP FALSE FORM> <>)
+	       (T <COND (<GASSIGNED? .APP> ,.APP)
+			(T ,TERPRI)>)>>>
+
+<DEFINE SOBJECT (ID "TUPLE" TUP) 
+	#DECL ((ID) STRING (TUP) TUPLE)
+	<OBJECT .ID "" "" "" <> () <> <+ !.TUP>>>
+
+<DEFINE AOBJECT (ID APP "TUPLE" TUP) 
+	#DECL ((ID) STRING (TUP) TUPLE (APP) ATOM)
+	<OBJECT .ID "" "" "" .APP () <> <+ !.TUP>>>
+
+<DEFINE OBJECT (ID DESC1 DESC2 DESCO APP CONTS CAN FLAGS
+		"OPTIONAL" (LIGHT? 0) (S1 0) (S2 0) (SIZE 5) (CAPAC 0))
+	#DECL ((ID) <OR ATOM STRING> (DESC1 DESC2) STRING (APP) <OR FALSE FORM ATOM>
+	       (CONTS) <LIST [REST OBJECT]> (CAN) <OR FALSE OBJECT>
+	       (FLAGS) <PRIMTYPE WORD> (SIZE CAPAC) FIX 
+	       (LIGHT? S1 S2) FIX (DESCO) <OR STRING FALSE>)
+	<SETG SCORE-MAX <+ ,SCORE-MAX .S1 .S2>>
+	<OR <0? .CAPAC> <SET FLAGS <+ .FLAGS ,CONTBIT>>>
+	<PUT
+	 <PUT
+	  <PUT
+	   <PUT
+	    <PUT
+	     <PUT
+	      <PUT
+	       <PUT
+	        <PUT
+		 <PUT
+		  <PUT
+		   <PUT <FIND-OBJ .ID>
+		        ,ODESC1
+		        .DESC1>
+		   ,OCAPAC
+		   .CAPAC>
+		  ,OSIZE
+		  .SIZE>
+		 ,ODESCO
+		 .DESCO>
+		,OLIGHT?
+		.LIGHT?>
+	       ,OFLAGS
+	       .FLAGS>
+	      ,OFVAL
+	      .S1>
+	     ,OTVAL
+	     .S2>
+	    ,OCAN
+	    .CAN>
+	   ,OCONTENTS
+	   .CONTS>
+	  ,ODESC2
+	  .DESC2>
+	 ,OACTION
+	 <COND (<TYPE? .APP FALSE FORM> <>)
+	       (<GASSIGNED? .APP> ,.APP)
+	       (T ,TERPRI)>>>
+
+<DEFINE FIND-ROOM (ID "AUX" ATM ROOM)
+	#DECL ((ID) <OR ATOM STRING>
+	       (ROOM) ROOM (ATM) <OR ATOM FALSE>)
+	<COND (<TYPE? .ID ATOM> <SET ID <SPNAME .ID>>)>
+	<COND (<AND <SET ATM <LOOKUP .ID ,ROOM-OBL>>
+		    <GASSIGNED? .ATM>>
+		    ,.ATM)
+	      (<OR .ATM
+		   <SET ATM <INSERT .ID ,ROOM-OBL>>>
+	       <SETG .ATM
+		     <SET ROOM
+			  <CHTYPE <VECTOR .ATM ,NULL-DESC ,NULL-DESC
+					  <> <> ,NULL-EXIT () <> 0 0>
+				 ROOM>>>
+	       <SETG ROOMS (.ROOM !,ROOMS)>
+	       .ROOM)>>
+
+<DEFINE FIND-OBJ (ID "AUX" OBJ ATM)
+	#DECL ((ID) <OR ATOM STRING> (OBJ) OBJECT (ATM) <OR ATOM FALSE>)
+	<COND (<TYPE? .ID ATOM> <SET ID <SPNAME .ID>>)>
+	<COND (<AND <SET ATM <LOOKUP .ID ,OBJECT-OBL>>
+		    <GASSIGNED? .ATM>>
+	       ,.ATM)
+	      (<OR .ATM
+		   <SET ATM <INSERT .ID ,OBJECT-OBL>>>
+	       <SETG .ATM
+		     <SET OBJ
+			  <CHTYPE [.ATM ,NULL-SYN ,NULL-DESC ,NULL-DESC <>
+				   <> () <> 0 <> 0 0 0 <> <> 5 0 ,NULL-SYN]
+				  OBJECT>>>
+	       <SETG OBJECTS (.OBJ !,OBJECTS)>
+	       .OBJ)>>
+
+<DEFINE ROOM-PRINT (ROOM)
+  #DECL ((ROOM) ROOM)
+  <PRINC "#ROOM [">
+  <PRINC <RID .ROOM>>
+  <PRINC " ">
+  <PRIN1 <RDESC2 .ROOM>>
+  <COND (<EMPTY? <REXITS .ROOM>>)
+	(<PRINC " ">
+	 <REPEAT ((EX <REXITS .ROOM>))
+	   <PRINC <1 .EX>>
+	   <COND (<EMPTY? <SET EX <REST .EX 2>>>
+		  <RETURN>)
+		 (<PRINC " ">)>>)>
+  <COND (<EMPTY? <ROBJS .ROOM>>)
+	(<PRINC " ">
+	 <MAPF <>
+	   <FUNCTION (X)
+	     <PRINC <OID .X>>
+	     <PRINC " ">>
+	   <ROBJS .ROOM>>)>
+  <PRINC "]">>
+
+<PRINTTYPE ROOM ,ROOM-PRINT>
+
+<DEFINE OBJ-PRINT (OBJ)
+  #DECL ((OBJ) OBJECT)
+  <PRINC "#OBJECT [">
+  <PRINC <OID .OBJ>>
+  <PRINC " ">
+  <PRINC <ODESC2 .OBJ>>
+  <COND (<NOT <EMPTY? <OCONTENTS .OBJ>>>
+	 <PRINC " ">
+	 <MAPF <>
+	   <FUNCTION (X)
+	     <PRINC <OID .X>>
+	     <PRINC " ">>
+	   <OCONTENTS .OBJ>>)
+	(<OCAN .OBJ>
+	 <PRINC " in ">
+	 <PRINC <OID <OCAN .OBJ>>>)>
+  <PRINC "]">>
+
+<PRINTTYPE OBJECT ,OBJ-PRINT>
+
+<DEFINE VERB-PRINT (VERB)
+  #DECL ((VERB) VERB)
+  <PRINC "#VERB [">
+  <PRIN1 <VNAME .VERB>>
+  <PRINC !\ >
+  <COND (<TYPE? <VFCN .VERB> RSUBR RSUBR-ENTRY>
+	 <PRIN1 <2 <VFCN .VERB>>>)
+	(<VFCN .VERB>
+	 <PRINC "#FUNCTION (&)">)
+	(<PRINC "<>">)>
+  <PRINC !\ >
+  <PRIN1 <VARGS .VERB>>
+  <PRINC !\]>>
+  
+<PRINTTYPE VERB ,VERB-PRINT>
+
+<DEFINE HACK-PRINT (HACK)
+  #DECL ((HACK) HACK)
+  <PRINC "#HACK [">
+  <PRIN1 <HROOM .HACK>>
+  <PRINC " #OBJECT [&] ">
+  <PRIN1 <HOBJS .HACK>>
+  <PRINC !\ >
+  <COND (<HACTION .HACK>
+	 <COND (<TYPE? <HACTION .HACK> RSUBR RSUBR-ENTRY>
+		<PRIN1 <2 <HACTION .HACK>>>)
+	       (<PRINC "#FUNCTION (&)">)>)
+	(<PRINC "<>">)>
+  <PRINC !\ >
+  <PRIN1 <HFLAG .HACK>>
+  <PRINC !\]>>
+
+<PRINTTYPE HACK ,HACK-PRINT>
+

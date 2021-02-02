@@ -1,0 +1,34 @@
+
+
+hactrnj
+
+vrsadr/:if n q-1'645
+(:(New version of DDT)
+
+)
+prompt/7type 20
+20/0"MAR--
+21/0">
+22/ 0
+
+.
+
+:tctyp query,line=79.
+:exists common;mar mail
+=:if e q
+(:print  
+:-save?-*
+:if more 0
+(:RENAME  ,mar omail
+1=):if e q
+(:delete  
+:*-flushed-*
+))
+
+:msgs
+:alarm 22:00:00
+
+:tvtodo
+
+:whoj
+

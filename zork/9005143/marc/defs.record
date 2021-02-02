@@ -1,0 +1,17 @@
+Compilation record for: DSK:MARC;DEFS 87
+Output file:  DSK:MARC;DEFS NBIN
+
+It is now FRIDAY, 1 JUL 1977 18:51 EDT
+
+File loaded.
+Precompilation loaded.
+No DEFINEd functions in this file.
+Functions ordered.
+
+
+Total time used is
+	24 sec. CPU time,
+	5 sec. garbage collector CPU time,
+	2 min. 13 sec. real time.
+CPU utilization is 18.045112%.
+Number of garbage collects = 1

@@ -1,0 +1,1961 @@
+
+<USE "ASYLUM" "MADMAN" "INFERIOR" "MUDTEC">
+
+<SETG FROBS
+      '![<ASK.QUESTIONS>					       ;"Answer"
+	 <BABBLE-SORT>					       ;"Babble, slowly"
+	 <RUNJOB "SYS2;TS BABBLE" "BABBLE" T>		      ;"Babble, quickly"
+	 <GRADE.STUFF>						        ;"Grade"
+	 <MAKE.QUESTIONS>				       ;"Make questions"
+	 <RUNJOB "SYS2;TS TVPEEK" "TVPEEK" <>>				 ;"Peek"
+	 <PSCORES>					      ;"Printing scores"
+	 <QUIT>							        ;"Leave"
+	 <READ.MAIL>						    ;"Read mail"
+	 <PRINT.QSCORE>					  ;"Status of questions"
+	 <PRINT.QSCORE <>>			  ;"Summary status of questions"
+	 <BABBLE-SORT T>					  ;"Tiny babble"
+	 <RUNJOB "SYS2;TS TWHOIS" "TWHOIS" T>			   ;"Twhois"!]>
+
+<SETG FROB-NAMES
+      '["
+Answering Questions.
+"
+	"
+Babbling
+"
+	"
+DDT.babbling
+"
+	"
+Grading/Reading Answers.
+"
+	"
+Making questions
+"
+	"
+Peeking
+"
+	"
+Printing score
+"
+	"
+Quitting
+"
+	"
+Reading mail.	
+"
+	"
+Status of questions
+"
+	"
+Summary status of questions
+"
+	"
+Tiny babbling
+"
+	"
+Twhois
+"]>
+
+<SETG TECO <>>
+
+<OR <GASSIGNED? TUV> <SETG TUV <IUVECTOR 4 0>>>
+
+<SETG TTUV <IUVECTOR 1 0>>
+
+<SETG NTTUV <IUVECTOR 1 0>>
+
+<SETG TBUV <IUVECTOR 4 0>>
+
+<SETG FOOUV <IUVECTOR 4 0>>
+
+<SETG CTRLG-KILL <>>
+
+<GDECL (TUV TBUV FOOUV)
+       <UVECTOR [4 FIX]>
+       (TTUV NTTUV)
+       <UVECTOR FIX>
+       (CTRLG-KILL)
+       <OR ATOM FALSE>>
+
+<SETG STATUS-VECTOR
+      '[0
+	"Grading"
+	1
+	"Answer "
+	2
+	"Babbling"
+	3
+	"Reading mail"
+	4
+	"Making "
+	5
+	"Peek"
+	6
+	"Start up"
+	7
+	"Printing score"
+	8
+	"Command"
+	9
+	"Updating"
+	10
+	"Status"
+	11
+	"FLUSH"
+	12
+	"ERROR"
+	13
+	"SHOUT"]>
+
+<DEFINE DFUMP ("OPTIONAL" (FNAM "MADMAN;TV FOO")) 
+	#DECL ((FNAM) STRING)
+	<DBG>
+	<CHAR-INIT>
+	<FUMP -1 ,TIME -1 .FNAM>>
+
+<SETG PLAYER-CT 0>
+
+<GDECL (PG PLAYER-CT) FIX (LASTMAIL) WORD>
+
+<DEFINE FUMP (VERSION
+	      "OPTIONAL" (SAVER ,TIME) (MODIF 0) (FNAM "MADMAN;TV FILE")
+	      "AUX" M PG PLAYERS TEMP PLAYER)
+   #DECL ((VERSION MODIF) FIX (M) <OR FALSE LIST> (SAVER) APPLICABLE
+	  (PLAYERS) STRUCTURED (PG TEMP) FIX (FNAM) STRING (PLAYER) TIME
+	  (IMLAC) <SPECIAL <OR ATOM FALSE>>)
+   <SETG ASPACE <AFIND 1>>
+   <SETG SSPACE <AFIND 1>>
+   <SETG QSPACE <AFIND 1>>
+   <SETG TVSPACE ,ASPACE>
+   <SETG LOSSSPACE <AFIND 2>>
+   <PAGE-GIVE <PAGE-FIND 15> 15>
+   <COND
+    (<=? <APPLY .SAVER "MADMAN;TRV SAVFIL"> "SAVED">)
+    (<AND <DINIT> <>>)
+    (<AND <=? <JNAME> "DEBUG"> <MEMQ <CHTYPE <XUNAME> TIME> ,WINNERS>>
+     <SETG TVASS <OPEN-DATA-FILE .FNAM <> 7 5>>
+     "LOSING")
+    (<SETG TVASS <OPEN-DATA-FILE .FNAM <> 7 5>>
+     <UNWIND <PROG ()
+		   <OR <MEMQ <SETG PLAYER <SET PLAYER <CHTYPE <XUNAME> TIME>>>
+			     ,WINNERS>
+		       <SETG CTRLG-KILL T>>
+		   <PRINC "
+TRIVIA.">
+		   <PRIN1 .VERSION>
+		   <COND (<0? .MODIF>) (<PRINC "."> <PRIN1 .MODIF>)>
+		   <CRLF>
+		   <IPC-OFF>
+		   <IPC-ON <SETG SPLAYER <MYSIXTOS .PLAYER>> "TRIVIA">
+		   <COMREP>
+		   <INIT>					 ;"SET UP TTY'S"
+		   <SET IMLAC?!-CALRDR!-PACKAGE .IMLAC?>
+		   <GET-SPACE ,ASPACE>
+		   <GET-SPACE ,SSPACE>
+		   <GET-SPACE ,QSPACE>
+		   <GET-SPACE ,LOSSSPACE>
+		   <NEW-LOSS>
+		   <RESET ,INCHAN>
+		   <COND (<SET M <MEMQ .PLAYER ,LOSSTABLE>>
+			  <SETG LUBLK <3 .M>>
+			  <SETG TINDEX <4 .M>>
+			  <OR <PASS-CHECK <2 .M>> <QUIT>>
+			  <PRINC "
+Last played ">
+			  <PDSKDATE <DATA-READW ,TVASS <+ ,LUBLK ,LASTIN>>>)
+			 (<SETG LUBLK <NEW-USER .PLAYER>>)>
+		   <AND <SET PG <DIRMAP ,TVASS ,PEEK-PAGE>>
+			<DIR-INIT .PG>
+			<PUT <MEMQ .PG <5 ,TVASS>> 3 1>
+			<SET TEMP
+			     <+ ,PEEK-START
+				<SETG PG <* .PG 1024>>
+				<SETG TINDEX <* ,TINDEX 4>>>>
+			<COND (<DHLOCK .TEMP>)
+			      (T <VALRET ":KILL
+:ALREADY PLAYING
+">)>>
+		   <UPDATE-BABBLE ,LUBLK ,TINDEX>
+		   <PUT ,TUV 2 <CHTYPE .PLAYER FIX>>
+		   <PUT ,TUV 3 <CHTYPE <DSKDATE> FIX>>
+		   <SET-STATUS ,$SWAKE>
+		   <DATA-PRINTW ,TVASS
+				<+ ,LUBLK ,LASTIN>
+				<SETG DATA-READ-WORD
+				      <SETG DATA-WRITE-WORD <DSKDATE>>>>
+		   <SETG DATA-AUTHOR-WORD <SQUOZE ,PLAYER>>
+		   <SETG LASTMAIL
+			 <CHTYPE <1 <GET-LOC <+ ,PG 1 ,TELEC-START ,TINDEX>
+					     ,TTUV>>
+				 WORD>>
+		   <SETG CTRLG-KILL <>>
+		   <READ.ANNOUNCE>
+		   <PLAY-BALL>>
+	     <AND ,CTRLG-KILL <QUIT>>>)
+    (<PRINC "
+TRIVIA DATA BASE MISSING?
+"> <QUIT>)>>
+
+<DEFINE UPDATE-BABBLE (LUBLK TINDEX
+		       "AUX" SCORE (TBUV ,TBUV) (PG ,PG) LOC (TTUV ,TTUV))
+	#DECL ((LOC LUBLK TINDEX PG) FIX (TBUV) <UVECTOR [3 FIX]>
+	       (SCORE) <OR FALSE <UVECTOR [REST UVECTOR]>> (TTUV) <UVECTOR FIX>)
+	<PUT-LOC <+ .PG ,TELEC-START .TINDEX 2> <PUT .TTUV 1 0>>
+	<SET LOC <+ .PG ,BABBLE-START .TINDEX>>
+	<UNWIND <PROG ((TOTAL 0.000) (POSS 0.000))
+		      #DECL ((TOTAL POSS) FLOAT)
+		      <COND (<DHLOCK .LOC>
+			     <SET SCORE
+				  <DATA-AREAD ,TVASS
+					      <+ .LUBLK ,SCORE>
+					      <ARESET ,SSPACE T <>>>>
+			     <GET-LOC .LOC .TBUV>
+			     <PUT .TBUV 2 <GETLASTQ .LUBLK>>
+			     <MAPF <>
+				   <FUNCTION (X) 
+					   <SET TOTAL <+ .TOTAL <1 .X>>>
+					   <SET POSS <+ .POSS <2 .X>>>>
+				   .SCORE>
+			     <PUT .TBUV 3 <CHTYPE .TOTAL FIX>>
+			     <PUT .TBUV 4 <CHTYPE .POSS FIX>>
+			     <PUT-LOC .LOC .TBUV>
+			     <DUNLOCK .LOC>)
+			    (<SLEEP 1> <AGAIN>)>>
+		<DUNLOCK .LOC>>>
+
+<SETG VERBOSE <>>
+
+<DEFINE DO-TELECON ("AUX" FX) 
+	#DECL ((FX) <OR FALSE FIX>)
+	<COND (<SET FX
+		    <READER '[] "at intervals of " '["" ""] '["FIX"] ,VERBOSE>>
+	       <TELECON .FX>)>>
+
+<SETG TELEC-INTERVAL 0>
+
+<GDECL (TELEC-INTERVAL) FIX>
+
+<DEFINE TELECON (AMT) 
+	#DECL ((AMT) FIX)
+	<SETG TELEC-INTERVAL .AMT>
+	<COND (<GASSIGNED? RTIMINT>)
+	      (<SETG RTIMINT <ON "REALT" ,CHECK.MAIL 1>>)>
+	<PUT-LOC <+ ,PG ,TELEC-START ,TINDEX 2>
+		 <PUT ,TTUV 1 *400000000000*>>
+	<REALTIMER .AMT>>
+
+<DEFINE OFFTELECON () 
+	<COND (<GASSIGNED? RTIMINT>
+	       <SETG TELEC-INTERVAL 0>
+	       <OFF ,RTIMINT>
+	       <PUT-LOC <+ ,PG ,TELEC-START ,TINDEX 2> <PUT ,TTUV 1 0>>
+	       <GUNASSIGN RTIMINT>)>>
+
+<DEFINE CHECK.MAIL ("AUX" LST (UV ,TTUV) (TINDEX ,TINDEX)) 
+	#DECL ((LST) WORD (UV) <UVECTOR FIX> (TINDEX) FIX)
+	<COND (<==? <CHTYPE <GETBITS <1 <GET-LOC <+ ,PG ,PEEK-START .TINDEX 3>
+						 .UV>>
+				     <BITS 18 18>>
+			    FIX>
+		    ,$SREAD>)
+	      (<==? <SET LST
+			 <CHTYPE <1 <GET-LOC <+ ,TELEC-START ,PG .TINDEX 1>
+					     .UV>>
+				 WORD>>
+		    ,LASTMAIL>)
+	      (<SETG LASTMAIL .LST>
+	       <SETG EXISTS T>
+	       <PRINC "
+--MESSAGE HERE--
+">)>
+	<INT-LEVEL 0>
+	<DISMISS T>>
+
+<SETG PNEWMAIL <>>
+
+<SETG EXISTS <>>
+
+<GDECL (PNEWMAIL EXISTS) <OR ATOM FALSE>>
+
+<SETG WINNERS
+      (<CHTYPE #WORD *554162430000* TIME>
+       <CHTYPE #WORD *644141000000* TIME>
+       <CHTYPE #WORD *525542000000* TIME>
+       <CHTYPE #WORD *435462000000* TIME>
+       <CHTYPE #WORD *604454000000* TIME>)>
+
+"MARC, TAA, JMB, CLR, PDL"
+
+<DEFINE PASS-CHECK (PW "AUX" PS I) 
+	#DECL ((PS PW) STRING (I) HANDLER)
+	<SET I
+	     <ON "CHAR"
+		 <FUNCTION (R N) 
+			 #DECL ((R) CHARACTER (N) CHANNEL)
+			 <COND (<==? .R <ASCII 19>>
+				<OR <MEMQ ,PLAYER ,WINNERS> <QUIT>>)>>
+		 8
+		 0
+		 ,INCHAN>>
+	<REPEAT ((N 3))
+		<RESET .INCHAN>
+		<TTYECHO .INCHAN <>>
+		<PRINC "
+Password: ">
+		<READSTRING <SET PS <ISTRING 10>> .INCHAN ,PWTERM>
+		<UPPERCASE .PS>
+		<TTYECHO .INCHAN T>
+		<COND (<=? .PS .PW> <OFF .I> <RETURN T>)
+		      (<SET N <- .N 1>> <AND <L? .N 0> <OFF .I> <RETURN <>>>)>>>
+
+<DEFINE NEW-USER (XUNM "AUX" PS VEC (TVA ,TVASS) (LSP ,LOSSSPACE) (SSP ,SSPACE)) 
+   #DECL ((PS) STRING (XUNM) TIME (VEC) <UVECTOR [REST UVECTOR]> (TVA) ASYLUM
+	  (LSP SSP) SPACE)
+   <PROG ()
+     <SET PS <ISTRING 10>>
+     <PRINC "
+Your TRIVIA password: ">
+     <RESET .INCHAN>
+     <TTYECHO .INCHAN <>>
+     <READSTRING .PS .INCHAN ,PWTERM>
+     <UPPERCASE .PS>
+     <COND (<MEMQ <1 .PS> " î">
+	    <PRINC "
+Illegal password.">
+	    <AGAIN>)>
+     <TTYECHO .INCHAN T>
+     <PRINC "
+Please confirm your chosen password,">
+     <OR <PASS-CHECK .PS> <AGAIN>>
+     <UNWIND
+      <PRINT-HELP T>
+      <QUIT>>
+     <PROG (L)
+       #DECL ((L) <OR FALSE FIX>)
+       <COND
+	(<SET L <DATA-RESERVE .TVA ,LBLEN>>
+	 <PROG (CRAZY P)
+	   #DECL ((CRAZY) <OR FALSE MANIAC> (P) LIST)
+	   <COND
+	    (<SET CRAZY <DATA-OPEN "PRINT" .TVA ,LUSERS>>
+	     <UNWIND
+	      <PROG (TINDEX)
+		    #DECL ((TINDEX) FIX)
+		    <COND (<==? <SET TINDEX
+				     <CHTYPE <DATA-READW .TVA ,HIPOFFSET> FIX>>
+				83>
+			   <PERR "Can't make NEW-USER--no slots available">)
+			  (T
+			   <SETG TINDEX .TINDEX>
+			   <DATA-PRINTW .TVA ,HIPOFFSET <+ .TINDEX 1>>
+			   <SETG PLAYER-CT <+ .TINDEX 1>>)>
+		    <SET VEC <AIUVECTOR <ARESET .SSP T <>> ,NCAT <AUVECTOR .SSP>>>
+		    <MAPR <>
+			  <FUNCTION (X) <PUT .X 1 <AUVECTOR .SSP 0.000 0.000>>>
+			  .VEC>
+		    <DATA-APRINT .TVA <+ .L ,SCORE> .SSP .VEC>
+		    <DATA-APRINT .TVA
+			  <+ .L ,QASKED>
+			  .SSP
+			  <AIVECTOR <ARESET .SSP T <>> ,NCAT <ALIST .SSP>>>
+		    <ARESET .LSP T <>>
+		    <SET P <DATA-AREAD .TVA ,LUSERS .LSP>>
+		    <SET P <ACONS .LSP .TINDEX .P>>
+		    <SET P <ACONS .LSP .L .P>>
+		    <SET P <ACONS .LSP <ACOPY .LSP .PS> .P>>
+		    <SET P <ACONS .LSP .XUNM .P>>
+		    <SETG LOSSTABLE .P>
+		    <OR <DATA-IPRINT .TVA .CRAZY .LSP .P>
+			<PERR "Can't print NEW-USER">>
+		    <DATA-CLOSE .TVA .CRAZY>>
+	      <DATA-CLOSE .TVA .CRAZY>>
+	     <DATA-PRINTW .TVA <+ .L ,QNEXT> ,LOWQUES>
+	     <DATA-PRINTW .TVA <+ .L ,ALAST> <+ .L ,ANEXT>>
+	     <DATA-PRINTW .TVA <+ .L ,MLAST> <+ .L ,MNEXT>>
+	     <DATA-PRINTW .TVA <+ .L ,ANNEXT> ,LOMAIL>
+	     .L)
+	    (<AGAIN>)>>)
+	(<AGAIN>)>>>>
+
+<DEFINE PRINT-HELP ("OPTIONAL" (NEW-PLAYER? <>))
+  #DECL ((NEW-PLAYER?) <OR ATOM FALSE>)
+  <COND (.NEW-PLAYER?
+	 <CRLF>
+	 <PRINC ,NEWMSG>)>
+  <COND (<RUNJOB "SYS1;TS PR" "TVDOC" <COND (.NEW-PLAYER? "HELP")
+					    (T)>>)>>
+
+<SETG LOSEMSG
+      "
+Full documentation can be found in MADMAN;TVDOC > and MADMAN;TVUPD >.">
+
+<SETG NEWMSG
+      
+"
+The following information has been found more or less essential to new
+TRIVIA users.  Please read it.">
+
+<DEFINE COMMAND ("AUX" RD) 
+	#DECL ((RD) <OR FALSE SYMBOL>)
+	<REPEAT ()
+		<AND ,PNEWMAIL ,EXISTS <READ.MAIL>>
+		<AND ,FLUSH <FLUSH-EM>>
+		<SET-STATUS ,$SCOM>
+		<COND (<SET RD <READER ,MCOMS "
+@" '["" ""] '["SYM"] <>>>
+		       <EVAL <2 .RD>>)>>>
+
+<SETG COMS
+      <MAKEBST "COMMANDS"
+	       '["Announce"
+		 <ANNOUNCE>
+		 "Answer"
+		 <ASK.QUESTIONS>
+		 "Auto.read"
+		 <COND (<SETG PNEWMAIL <NOT ,PNEWMAIL>>
+			<PRINC "
+Automatic reading">)
+		       (T <PRINC "
+Manual reading">)>
+		 "Babble"
+		 <BABBLE-SORT>
+		 "DDT.babble"
+		 <RUNJOB "SYS2;TS BABBLE" "BABBLE" T>
+		 "End.teleconference"
+		 <OFFTELECON>
+		 "Grade"
+		 <GRADE.STUFF>
+		 "Help"
+		 <PRINT-HELP>
+		 "Intest"
+		 <PROG ()
+		       <READ.ANNOUNCE>
+		       <PLAY-BALL>>
+		 "Kill.teco"
+		 <TECO-KILL>
+		 "Load.scores"
+		 <MOBY-VEC>
+		 "Make"
+		 <MAKE.QUESTIONS>
+		 "No.simple"
+		 <COND (<SETG IGNORE-SIMPLE <NOT ,IGNORE-SIMPLE>>
+			<PRINC "
+Ignore simple questions">)
+		       (<PRINC "
+Read simple questions">)>
+		 "Peek"
+		 <RUNJOB "SYS2;TS TVPEEK" "TVPEEK" <>>
+		 "Print.score"
+		 <PSCORES>
+		 "Question.print"
+		 <PRINT.QSCORE T T>
+		 "Quit"
+		 <QUIT>
+		 "Read.mail"
+		 <READ.MAIL>
+		 "Rpeek"
+		 <RUNJOB "SYS2;TS TVPEEK" "TVPEEK" "R">
+		 "Safety"
+		 <COND (<SETG BUFSAFE <NOT ,BUFSAFE>> <PRINC "
+Safe">)
+		       (<PRINC "
+Sorry">)>
+		 "Save.tailor"
+		 <SAVE-TAILOR>
+		 "Send.mail"
+		 <SEND.MAIL>
+		 "Sequence"
+		 <GET-SEQUENCE>
+		 "Shout"
+		 <SHOUT>
+		 "Simple.load"
+		 <LOAD.SIMPLE>
+		 "Simple.print"
+		 <PRINT.SIMPLE>
+		 "Simple.update"
+		 <UPDATE.QUESTION <>>
+		 "Status.of.question"
+		 <PRINT.QSCORE>
+		 "Summary.status.of.question"
+		 <PRINT.QSCORE <>>
+		 "Teleconference"
+		 <DO-TELECON>
+		 "Tiny.babble"
+		 <BABBLE-SORT T>
+		 "Tvbug"
+		 <RUNJOB "SYS2;TS TVBUG" "TVBUG" <>>
+		 "Tvtodo"
+		 <RUNJOB "SYS2;TS TVTODO" "TVTODO" T>
+		 "Twhois"
+		 <RUNJOB "SYS2;TS TWHOIS" "TWHOIS" T>
+		 "Update.question"
+		 <UPDATE.QUESTION>
+		 "Verbosity"
+		 <COND (<SETG VERBOSE <NOT ,VERBOSE>> <PRINC "
+Verbose">)
+		       (<PRINC "
+Unverbose">)>
+		 "Which.teco"
+		 <GET-TECO>]>>
+
+<SETG BUFSAFE <>>
+
+<SETG DCOMS <MAKESST "DCOM" []>>
+
+<SETG MCOMS <MAKEMST "MCOM" [,COMS ,DCOMS]>>
+
+<SETG DCOM
+      '["Recurse"
+	<RECURSE>
+	"Play"
+	<PLAY>
+	"Erret"
+	<DO-ERRET>
+	"Evaluate"
+	<DO-EVAL>]>
+
+<SETG DP " with JCL of ">
+
+<GDECL (DP) STRING>
+
+<DEFINE RUNJOB (FILE JNAME JCL? "AUX" (JCL <>) (JOB <>))
+  #DECL ((FILE JNAME) STRING (JCL?) <OR STRING ATOM FALSE> (JCL) <OR FALSE STRING>
+	 (JOB) <OR FALSE INF>)
+  <COND (.JCL?
+	 <COND (<TYPE? .JCL? STRING>
+		<SET JCL .JCL?>)
+	       (T
+		<SET JCL <READER [] ,DP "" ["LINE"] ,VERBOSE>>)>)>
+  <CRLF>
+  <UNWIND
+   <COND (<SET JOB <INF-LOAD .FILE .JNAME .JCL>>
+	  <INF-START .JOB>
+	  <OR <NOT <2 .JOB>>
+	      <INF-KILL .JOB>>)
+	 (T
+	  <CRLF>
+	  <PRIN1 .JOB>)>
+   <AND .JOB <2 .JOB> <INF-KILL .JOB>>>>
+
+<DEFINE DO-ERRET () <ERRET <READER '[] "" "" '["ANY"] <>>>>
+
+<DEFINE DO-EVAL () <AND <MEMQ <CHTYPE <XUNAME> TIME> ,WINNERS>
+			<EVAL <READER '[] "" "" '["ANY"] <>>>>>
+
+<SETG DEBUGSW <>>
+
+<DEFINE DBG () <PUT ,DCOMS 2 ,DCOM> <SETG DEBUGSW T>>
+
+<SETG FLUSH <>>
+
+<SETG QTYPES
+      <MAKEBST "QT"
+	       '["Command"
+		 1
+		 "Joint"
+		 8
+		 "Long Answer"
+		 2
+		 "Matching"
+		 3
+		 "Multiple Choice"
+		 4
+		 "None"
+		 0
+		 "Quit"
+		 6
+		 "Ranking"
+		 9
+		 "Simple"
+		 7
+		 "True/False"
+		 5]>>
+
+<SETG CATS
+      <MAKEBST "CAT"
+	       '["Athletics"
+		 1
+		 "Cinema"
+		 2
+		 "Events"
+		 3
+		 "General"
+		 4
+		 "History"
+		 5
+		 "Literature"
+		 6
+		 "Music"
+		 7
+		 "Science Fiction"
+		 8
+		 "TV/Radio"
+		 9]>>
+
+<DEFINE QUESTIONABLE? (STR) 
+	#DECL ((STR) STRING)
+	<NOT <MAPF <>
+		   <FUNCTION (X) <COND (<G? <ASCII .X> 32> <MAPLEAVE T>)>>
+		   .STR>>>
+
+<DEFINE TP (QUESTION)			      ;"Hack to get Q's to print evenly"
+	#DECL ((QUESTION) STRING)
+	<COND (<L=? <14 .OUTCHAN> 40> <PUT .OUTCHAN 14 41>)>
+	.QUESTION>
+
+<DEFINE UNTASTEFUL-CODE (Q "OPTIONAL" (GST <>) (LETR <>) "AUX" (IDX 0)) 
+	#DECL ((Q) STRUCTURED (GST LETR) <OR 'T FALSE> (IDX) FIX)
+	<MAPF ,VECTOR
+	      <FUNCTION (X) 
+		      <SET IDX <+ .IDX 1>>
+		      <COND (<AND <1? .IDX> .GST>
+			     <MAPRET 2
+				     ,MATCH-HACK
+				     <STRING <UNPARSE .IDX>
+					     ".     "
+					     .X>
+				     0>)>
+		      <MAPRET <STRING <COND (.LETR <ASCII <+ .IDX 96>>)
+						   (<UNPARSE .IDX>)>
+				      ".     "
+				      .X>
+			      <COND (.GST 0) (.IDX)>>>
+	      .Q>>
+
+<DEFINE FLUSH-EM () 
+	<COND (<==? ,FLUSH SYSDOWN>
+	       <OUT SYSTEM\ GOING\ DOWN>)
+	      (<==? ,FLUSH SHOUT> <SETG FLUSH <>> <PRINT.SHOUT>)
+	      (<==? ,FLUSH PURGE> <OUT EXCESSIVE-SYSTEM-LOAD>)
+	      (<==? ,FLUSH TECO>
+	       <SETG FLUSH <>>
+	       <COND (,TECO
+		      <TECO-KILL>
+		      <PRINC "
+TECO killed to free system resources.
+">)>)
+	      (T <OUT ,FLUSH>)>>
+
+<DEFINE OUT (WHY? "AUX" MSG)
+  #DECL ((WHY?) ATOM (MSG) <VECTOR TIME STRING>)
+  <SET-STATUS ,$SFLUSH>
+  <OFF "CHAR" ,INCHAN>
+  <IPC-OFF>
+  <INT-LEVEL 999>
+  <COND (<==? .WHY? T>
+	 <SET MSG <DATA-AREAD ,TVASS ,SHOUTMSG <ARESET ,ASPACE T <>>>>
+	 <CRLF>
+	 <PRINC "TRIVIA brought down by ">
+	 <PRINC <1 .MSG>>
+	 <CRLF>
+	 <PRINC <2 .MSG>>)
+	(T
+	 <PRINC "TRIVIA brought down due to ">
+	 <PRINC .WHY?>)>
+  <VALRET ":KILL
+:
+TRIVIA DOWN!
+
+">>
+
+<DEFINE PRINT.SHOUT ("AUX" (MSG
+			    <DATA-AREAD ,TVASS ,SHOUTMSG <ARESET ,ASPACE T <>>>))
+	#DECL ((MSG) <VECTOR TIME STRING>)
+	<CRLF>
+	<CRLF>
+	<CRLF>
+	<IMAGE 7>
+	<IMAGE 7>
+	<IMAGE 7>
+	<PRINC "Message from ">
+	<6PRINC <1 .MSG>>
+	<CRLF>
+	<PRINC <2 .MSG>>
+	<CRLF>>
+
+<DEFINE FLUSH-TECOS ()
+	<COND (<MEMQ ,PLAYER ,WINNERS>
+	       <SEND-TRIVIAS TECO>)>>
+
+<DEFINE SHOUT ("AUX" MSG ID (TVA ,TVASS) (ASP ,ASPACE)) 
+   #DECL ((MSG) STRING (ID) <OR FALSE MANIAC> (TVA) ASYLUM (ASP) SPACE)
+   <COND (<MEMQ ,PLAYER ,WINNERS>
+	  <SET MSG <GETBUF "Message: ">>
+	  <COND (<NOT <QUESTIONABLE? .MSG>>
+		 <COND (<SET ID <DATA-OPEN "PRINT" .TVA ,SHOUTMSG>>
+			<DATA-IPRINT .TVA
+				     .ID
+				     .ASP
+				     <AVECTOR <ARESET .ASP T <>>
+					      ,PLAYER
+					      <ACOPY .ASP .MSG>>>
+			<SEND-TRIVIAS SHOUT>
+			<DATA-CLOSE .TVA .ID>)
+		       (<CRLF>
+			<PRINC 
+"The right hand knows not what the left hand does.">
+			<CRLF>)>)>)>>
+
+<DEFINE FLUSH-ALL ("OPTIONAL" (WHY? <>) "AUX" ID CH MSG (TVA ,TVASS) (ASP ,ASPACE)) 
+	#DECL ((WHY?) <OR ATOM FALSE> (MSG) STRING (CH) <OR CHANNEL FALSE>
+	       (ID) <OR MANIAC FALSE> (TVA) ASYLUM (ASP) SPACE)
+	<COND (<MEMQ ,PLAYER ,WINNERS>
+	       <CRLF>
+	       <OR <SET CH <OPEN "PRINT" "_MSGS_;TRIVIA DEATH">>
+		   <ERROR .CH>>
+	       <COND (.WHY?
+		      <MSGOUT .WHY? .CH>
+		      <SEND-TRIVIAS .WHY?>)
+		     (T
+		      <SET MSG <GETBUF "Message:  ">>
+		      <COND (<NOT <QUESTIONABLE? .MSG>>
+			     <COND (<SET ID <DATA-OPEN "PRINT" .TVA ,SHOUTMSG>>
+				    <DATA-IPRINT .TVA .ID .ASP
+						 <AVECTOR <ARESET .ASP T <>>
+							  ,PLAYER
+							  <ACOPY .ASP .MSG>>>
+				    <MSGOUT .MSG .CH>
+				    <SEND-TRIVIAS T>
+				    <DATA-CLOSE .TVA .ID>)
+				   (T
+				    <CRLF>
+				    <PRINC "One at a time, please!">
+				    <CRLF>)>)>)>)
+	      (<QUIT>)>>
+
+<DEFINE MSGOUT (MSG CH) #DECL ((MSG) <OR ATOM STRING> (CH) CHANNEL)
+   <PRINC "TRIVIA brought down by " .CH>
+   <PRINC ,PLAYER .CH>
+   <CRLF .CH>
+   <PRINC .MSG .CH>
+   <CLOSE .CH>>
+
+<DEFINE SEND-TRIVIAS (WHAT?
+		      "AUX" (PG ,PG) (UV ,FOOUV) (SENDER ,PLAYER)
+			    (MSG <STRING "<SETG FLUSH " <UNPARSE .WHAT?> ">">))
+	#DECL ((WHAT?) ANY (PG) FIX (UV) <UVECTOR [4 FIX]> (MSG) STRING (SENDER) TIME)
+	<SET-STATUS ,$SHOUT>
+	<REPEAT ((N 0) (LOC <+ .PG ,PEEK-START>) LOSER)
+		#DECL ((N LOC) FIX (LOSER) TIME)
+		<COND (<G? .N 83> <RETURN>)
+		      (<AND <GET-LOC .LOC .UV> <0? <1 .UV>>>
+		       <COND (<==? <SET LOSER <CHTYPE <2 .UV> TIME>> .SENDER>)
+			     (T
+			      <SEND <MYSIXTOS .LOSER> "TRIVIA" .MSG *400000000000*>
+			      <6PRINC .LOSER>
+			      <CRLF>)>)>
+		<SET N <+ .N 1>>
+		<SET LOC <+ .LOC 4>>>>
+
+<SETG GIVEUP <MAKESST "GIVE" ["
+Give up (CR)" <>]>>
+
+<SETG SYMTAB <MAKESST "SYMS" []>>
+
+<SETG ALLSYMS <MAKEMST "ALLSYMS" [,GIVEUP ,SYMTAB]>>
+
+<SETG ALWAYS-ANSWER <>>
+
+<SETG KEEPASKING <>>
+
+<SETG IGNORE-SIMPLE <>>
+
+<SETG T/F <MAKESST "T/F" ["Yes" T "No" <>]>>
+
+<DEFINE TRUE? (STR1 STR2 TRUELST FALSELST "OPTIONAL" INTCHR "AUX" CHR) 
+	#DECL ((STR1 STR2) STRING (INTCHR CHR) CHARACTER (TRUELST FALSELST) STRING)
+	<PROG ()
+	      <PRINC .STR1>
+	      <RESET ,INCHAN>
+	      <PRINC " (">
+	      <PRINC .STR2>
+	      <PRINC ") ">
+	      <SET CHR <TYI>>
+	      <COND (<AND <ASSIGNED? INTCHR> <==? .CHR .INTCHR>>
+		     <INTERRUPT "CHAR" .INTCHR ,INCHAN>)>
+	      <COND (<MEMQ .CHR .TRUELST>)
+		    (<MEMQ .CHR .FALSELST> <>)
+		    (<AGAIN>)>>>
+
+<DEFINE SEND-PLAYER (WHO WHAT
+		     "OPTIONAL" (WHR ,ALAST) (MUNG-SLOT? <>) (MUNG-SLOT1? <>)
+		     (ASP ,ASPACE) "AUX" (TVA ,TVASS) (TTUV ,NTTUV) NUTS LAST
+			   LOC)
+   #DECL ((WHO) TIME (WHAT) ANY (ASP) SPACE (NUTS) LIST (LOC LAST WHR) FIX
+	  (TVA) ASYLUM (MUNG-SLOT MUNG-SLOT1) <OR FIX FALSE>
+	  (TTUV) <UVECTOR FIX> (MUNG-SLOT? MUNG-SLOT1?) <OR FIX FALSE>)
+   <COND (<==? ,PLAYER ,DEBUGNAME>)
+	 (<SET NUTS <GET-LOSER .WHO>>
+	  <SET LAST <+ .WHR <3 .NUTS>>>
+	  <COND (.MUNG-SLOT?
+		 <SET LOC <+ ,PG <* 4 <4 .NUTS>> .MUNG-SLOT?>>
+		 <UNWIND <PROG ()
+			       <COND (<DHLOCK .LOC>
+				      <GET-LOC .LOC .TTUV>
+				      <PUT .TTUV 1 <CHTYPE <4 .WHAT> FIX>>
+				      <PUT-LOC <+ .LOC 1> .TTUV>
+				      <DUNLOCK .LOC>)
+				     (<SLEEP 2> <AGAIN>)>>
+			 <DUNLOCK .LOC>>)
+		(.MUNG-SLOT1?
+		 <SET LOC <+ 3 ,PG <* 4 <4 .NUTS>> .MUNG-SLOT1?>>
+		 <GET-LOC .LOC .TTUV>
+		 <PUT .TTUV 1 <+ <1 .TTUV> 1>>
+		 <PUT-LOC .LOC .TTUV>)>
+	  <COND (<CHAIN-APPEND .TVA .ASP .WHAT .LAST>
+		 <CRLF>
+		 <PRINC "Sent.">)
+		(<PERR "SEND-PLAYER FAILURE -- PLEASE REPORT TO MARC">)>)>>
+
+<DEFINE NEW-LOSS ("AUX" NUTS) 
+	#DECL ((NUTS) <OR LIST FALSE>)
+	<COND (<N==? ,PLAYER-CT
+		     <SETG PLAYER-CT
+			   <CHTYPE <DATA-READW ,TVASS ,HIPOFFSET> FIX>>>
+	       <GUNASSIGN PLAYER-SYMS>
+	       <COND (<SET NUTS <DATA-AREAD ,TVASS ,LUSERS <ARESET ,LOSSSPACE T <>>>>
+		      <SETG LOSSTABLE .NUTS>
+		      .NUTS)
+		     (T
+		      <PERR "Can't read losstable--your TRIVIA is DEAD"
+			    .NUTS
+			    NEW-LOSS>)>)
+	      (T ,LOSSTABLE)>>
+
+<DEFINE CHAIN-APPEND (TVA TVS WHAT CHAIN "AUX" OINT) 
+	#DECL ((TVA) ASYLUM (TVS) SPACE (WHAT) ANY (OINT CHAIN) FIX)
+	<SET OINT <INT-LEVEL 20>>
+	<PROG (FROB HIA WHR RETVAL)
+	      #DECL ((FROB HIA) <OR FALSE MANIAC> (RETVAL WHR) FIX)
+	      <COND (<SET FROB <DATA-APRINT .TVA -1 .TVS .WHAT>>
+		     <OR <0? <CHTYPE <DATA-READW .TVA <SET RETVAL <1 .FROB>>>
+				     FIX>>
+			 <AND <INT-LEVEL 0>
+			      <PERR "Non-zero chain pointer"
+				    CHAIN-APPEND
+				    .FROB>>>
+		     <COND (<AND <SET HIA <DATA-OPEN "PRINTW" .TVA .CHAIN>>
+				 <SET WHR <CHTYPE <DATA-READW .TVA .CHAIN> FIX>>
+				 <DATA-PRINTW .TVA .WHR .RETVAL>
+				 <DATA-PRINTW .TVA .HIA .RETVAL>>
+			    <INT-LEVEL .OINT>
+			    .RETVAL)
+			   (<AND <NOT .HIA> <MEMQ <1 .HIA> '(5 6)>>
+			    <STALL <1 .HIA>>
+			    <AGAIN>)
+			   (<PERR "Can't CHAIN-APPEND" .FROB .HIA>)>)
+		    (<MEMQ <1 .FROB> '(5 6)> <STALL <1 .FROB>> <AGAIN>)
+		    (<INT-LEVEL 0>
+		     <PERR "Can't PRINT append, CHAIN-APPEND" .FROB>)>>>
+
+<DEFINE STALL (WHY) 
+	#DECL ((WHY) FIX)
+	<PRINC "
+NON-FATAL TIME OUT, STALLING BECAUSE --">
+	<PRINC <NTH ,DATA-ERRORS .WHY>>
+	<SLEEP 4>>
+
+<DEFINE GET-LOSER (PLAYER "AUX" (NUTS ,LOSSTABLE) OINT) 
+	#DECL ((PLAYER) TIME (NUTS) <OR LIST FALSE> (OINT) FIX)
+	<SET OINT <INT-LEVEL 20>>
+	<COND (<SET NUTS <MEMQ .PLAYER .NUTS>>)
+	      (<SET NUTS <NEW-LOSS>>
+	       <COND (<SET NUTS <MEMQ .PLAYER .NUTS>>)
+		     (<PERR "Player does not exist!!" .PLAYER GET-LOSER>)>)>
+	<INT-LEVEL .OINT>
+	.NUTS>
+
+<DEFINE ADDSCORE (WHO QUES AMT
+		  "AUX" (NUTS <GET-LOSER .WHO>) (TVA ,TVASS) (SSP ,SSPACE) ID
+			SCORE SCUVEC LBLK CATSCR OINT)
+   #DECL ((WHO) TIME (QUES) VECTOR (AMT) <OR FIX FLOAT> (TVA) ASYLUM
+	  (NUTS) LIST (SSP) SPACE (ID) <OR MANIAC FALSE> (SCORE) WORD
+	  (SCUVEC) <UVECTOR [REST <UVECTOR FLOAT FLOAT>]>
+	  (OINT LBLK) FIX (CATSCR) <UVECTOR FLOAT FLOAT>)
+   <COND
+    (<==? ,PLAYER ,DEBUGNAME>)
+    (<SET OINT <INT-LEVEL 20>>
+     <COND
+      (<SET ID <DATA-OPEN "PRINTW" .TVA <NTH .QUES ,QSCORE>>>
+       <SET SCORE <DATA-READW .TVA <1 .ID>>>
+       <SET SCORE
+	    <PUTBITS .SCORE
+		     <BITS 18 18>
+		     <CHTYPE <+ 1 <CHTYPE <GETBITS .SCORE <BITS 18 18>> FIX>>
+			     WORD>>>
+       <DATA-PRINTW
+	.TVA
+	.ID
+	<PUTBITS .SCORE
+		 <BITS 18 0>
+		 <CHTYPE <+ <FIX <* 1000 .AMT>>
+			    <CHTYPE <GETBITS .SCORE <BITS 18 0>> FIX>>
+			 WORD>>>)
+      (<INT-LEVEL 0> <PERR "Can't update QUESTION-SCORE" .QUES>)>
+     <SET LBLK <3 .NUTS>>
+     <PROG (QVAL (TBUV ,TBUV) (TINDEX <4 .NUTS>)
+	    (LOC <+ ,PG ,BABBLE-START <* 4 .TINDEX>>))
+	   #DECL ((QVAL) FLOAT (TBUV) <UVECTOR [4 FIX]> (TINDEX LOC) FIX)
+	   <COND
+	    (<SET ID <DATA-OPEN "PRINT" .TVA <+ .LBLK ,SCORE>>>
+	     <SET SCUVEC <DATA-IREAD .TVA .ID <ARESET .SSP T <>>>>
+	     <SET CATSCR <NTH .SCUVEC <NTH .QUES ,QCAT>>>
+	     <PUT .CATSCR 1 <FLOAT <+ .AMT <1 .CATSCR>>>>
+	     <PUT .CATSCR
+		  2
+		  <+ <SET QVAL <FLOAT <NTH .QUES ,QVAL>>> <2 .CATSCR>>>
+	     <DATA-IPRINT .TVA .ID .SSP .SCUVEC>
+	     <PROG ()
+		   <COND (<DHLOCK .LOC>
+			  <GET-LOC .LOC .TBUV>
+			  <PUT .TBUV
+			       3
+			       <CHTYPE <+ <CHTYPE <3 .TBUV> FLOAT> <FLOAT .AMT>>
+				       FIX>>
+			  <PUT .TBUV
+			       4
+			       <CHTYPE <+ <CHTYPE <4 .TBUV> FLOAT> .QVAL> FIX>>
+			  <PUT-LOC .LOC .TBUV>
+			  <DUNLOCK .LOC>)
+			 (<SLEEP 2> <AGAIN>)>>
+	     <DATA-CLOSE .TVA .ID>)
+	    (<MEMQ <1 .ID> '(5 6)> <STALL <1 .ID>> <AGAIN>)
+	    (<INT-LEVEL 0>
+	     <PERR "Can't update PLAYER-SCORE" .WHO .AMT .NUTS>)>>
+     <INT-LEVEL .OINT>)>>
+
+<DEFINE PERR (STR "TUPLE" ARG) 
+	#DECL ((STR) STRING (ARG) TUPLE)
+	<SET-STATUS ,$SERROR>
+	<CRLF>
+	<PRINC "ERROR, ">
+	<PRINC .STR>
+	<PRINC ".  ">
+	<SETG REP ,SAVEREP>
+	<COND (<NOT ,CTRLG-KILL>
+	       <SEND-ERROR .STR .ARG>)>
+	<ERROR TRIVIA-LOSSAGE!-ERRORS !.ARG>>
+
+<SETG TAASIX <CHTYPE -12322603008 TIME>>
+
+<SETG MARCSIX <CHTYPE -19834195968 TIME>>
+
+<MANIFEST TAASIX MARCSIX>
+
+<SETG TAASTR "TAA">
+
+<SETG MARCSTR "MARC">
+
+<SETG MAINT "MARC or TAA">
+
+<DEFINE SEND-ERROR (STR ARG "AUX" IT)
+  #DECL ((STR) STRING (IT) FIX (ARG) TUPLE)
+  <COND (<OR <AND <SET IT <IDLE-TIME ,TAASIX>>
+		  <L? .IT 600>
+		  <CLI-SEND ,TAASTR .STR .ARG>>
+	     <AND <SET IT <IDLE-TIME ,MARCSIX>>
+		  <L? .IT 600>
+		  <CLI-SEND ,MARCSTR .STR .ARG>>>)
+	(T
+	 <PRINC "Please report to ">
+	 <PRINC ,MAINT>)>>
+
+<DEFINE CLI-SEND (PLAYER MSG ARG "AUX" CH)
+  #DECL ((CH) <OR CHANNEL FALSE> (PLAYER) STRING)
+  <COND (<AND <N=? ,SPLAYER .PLAYER>
+	      <SET CH <OPEN "PRINT" .PLAYER "HACTRN" "CLI">>>
+	 <PRINC ,SPLAYER .CH>
+	 <CRLF .CH>
+	 <PRINC .MSG .CH>
+	 <MAPF <> <FUNCTION (X) <PRINT .X .CH>> .ARG>
+	 <CLOSE .CH>
+	 <CRLF>
+	 <PRINC <7 .CH>>
+	 <PRINC " is on line and has been informed.">)>>
+
+<SETG WHOSYMS <MAKESST "FOO" []>>
+
+<DEFINE P-SYMS ("AUX" (NUTS <NEW-LOSS>) (CURSPACE ,LOSSSPACE)
+		(LS ,LOSSSPACE)) 
+   #DECL ((NUTS) LIST (CURSPACE) <SPECIAL SPACE> (LS) SPACE)
+   <COND (<GASSIGNED? PLAYER-SYMS> ,PLAYER-SYMS)
+	 (<SETG PLAYER-SYMS
+	   <PUT ,WHOSYMS
+		2
+		<MAPR ,ALVECTOR
+		      <FUNCTION (X) 
+			      <COND (<==? 1 <1 .X>> <MAPRET>)
+				    (<TYPE? <1 .X> TIME>
+				     <MAPRET <ASTRING .LS <MYSIXTOS <1 .X>>> <3 .X>>)
+				    (<MAPRET>)>>
+		      .NUTS>>>)>>
+
+<DEFINE SEND.MAIL ("AUX" (ASP <ARESET ,ASPACE T <>>) WHO LST MSG) 
+   #DECL ((ASP) SPACE (WHO) <OR FALSE VECTOR> (LST) <LIST [REST SYMBOL]>
+	  (MSG) STRING)
+   <COND
+    (<SET WHO <READARGS <P-SYMS> "To " '["" ""] '["SYM" "MULT"]>>
+     <COND (<EMPTY? <SET LST <1 .WHO>>>)
+	   (<SET MSG <GETBUF "Message: " .ASP>>
+	    <MAPF <>
+		  <FUNCTION (X) 
+			  <SEND-PLAYER <CHTYPE <STRTOX <1 .X>> TIME>
+				       <AVECTOR .ASP
+						.MSG
+						1
+						,PLAYER
+						<DSKDATE>>
+				       ,MLAST
+				       ,TELEC-START>>
+		  .LST>)>)>>
+
+<DEFINE CHAIN-FOLLOW (APP FROM TO "OPTIONAL" (FROB? <>)
+		      "AUX" (TVA ,TVASS)
+			    (LO <CHTYPE <DATA-READW .TVA <+ ,LUBLK .FROM>> FIX>)
+			    (ASP <ARESET ,ASPACE T <>>) (TTUV ,NTTUV) MAIL NEXT)
+	#DECL ((TVA) ASYLUM (LO FROM TO) FIX (ASP) SPACE
+	       (MAIL) <OR FALSE VECTOR> (NEXT) WORD (TTUV) <UVECTOR <PRIMTYPE WORD>>
+	       (APP) <VECTOR [REST APPLICABLE]> (FROB?) <OR FIX FALSE>)
+	<COND (<0? .LO> #FALSE ())
+	      (<SET MAIL <DATA-AREAD .TVA .LO .ASP>>
+	       <APPLY <NTH .APP <NTH .MAIL ,ATYPE>> .MAIL>
+	       <AND .FROB?
+		    <GET-LOC .FROB? .TTUV>
+		    <PUT-LOC .FROB? <PUT .TTUV 1 <- <1 .TTUV> 1>>>>
+	       <DATA-PRINTW .TVA
+			    <+ ,LUBLK .FROM>
+			    <SET NEXT <DATA-READW .TVA .LO>>>
+	       <COND (<==? .NEXT #WORD *000000000000*>
+		      <DATA-PRINTW .TVA <+ ,LUBLK .TO> <+ ,LUBLK .FROM>>)>
+	       <DATA-DELETE .TVA .LO>)>>
+
+<DEFINE VERBOHACK ("TUPLE" TUP) 
+	<CRLF>
+	<COND (<SETG KEEPASKING <NOT ,KEEPASKING>>
+	       <PRINC "Continuous questions mode">
+	       <AND <ASSIGNED? topask>
+		    <LEGAL? .topask>
+		    <RETURN T .topask>>)
+	      (<PRINC "One at a time mode">)>
+	<CRLF>>
+
+<DEFINE ANSHACK () 
+	<CRLF>
+	<COND (<SETG ALWAYS-ANSWER <NOT ,ALWAYS-ANSWER>>
+	       <PRINC "Always give answer mode">
+	       <AND <ASSIGNED? topask>
+		    <LEGAL? .topask>
+		    <RETURN T .topask>>)
+	      (<PRINC "Dont give answers">)>
+	<CRLF>>
+
+<DEFINE ANSWERHACK ("TUPLE" X) 
+	<PROG ()
+	      <COND (<AND <ASSIGNED? Q.A>
+			  <ASSIGNED? BUF>
+			  <==? <NTH .Q.A ,QTYPE> ,$TLONG>>
+		     <ADDSTRING .BUF <NTH .Q.A 10>>
+		     <PRINC "[Answer added]">)
+		    (<ANSHACK>)>>>
+
+<DEFINE CHAR-INIT ("AUX" FOO)
+	#DECL ((FOO) <VECTOR [REST CHARACTER <OR APPLICABLE FORM>]>) 
+	<CALRDRINIT>
+	<SETG SPCCHARS <STRING <ASCII 22> !,SPCCHARS>>
+	<SET FOO <MEMQ <ASCII 12> .CHRTABLE>>
+	<PUT .FOO 2 ,BUFHACK>
+	<SET CHRTABLE
+	     [<ASCII 20> ,ANSWERHACK <ASCII 22> ,VERBOHACK !.CHRTABLE]>
+	<SET FOO <MEMQ <ASCII 5> .CHRTABLE>>
+	<PUT .FOO 2 ,BUFTECO>
+	<SET FOO <MEMQ <ASCII 12> ,XSPCCHARS>>
+	<PUT .FOO 2 '<CLEAR>>
+	<SETG XSPCCHARS
+	      [<ASCII 20> '<ANSHACK> <ASCII 22> '<VERBOHACK> !,XSPCCHARS]>
+	<SETG INPUT-INT <ON "CHAR" ,CHARINT 8 0 ,INCHAN>>
+	'<SETG MORE-INT <ON "CHAR" ,MORE-HANDLE 8 0 ,OUTCHAN>>>
+
+<DEFINE GET-TECO ("AUX" EDT FIL TEMP)
+  #DECL ((EDT) <LIST [REST TIME]> (FIL TEMP) STRING)
+  <PRINC "Please give the name of the TECO  you desire:  'E', 'RMODE',
+or whatever.  ">
+  <PROG ()
+    <COND (<NOT <EMPTY? <SET TEMP <READER [] "Program name " "" ["LINE"] ,VERBOSE>>>>
+	   <SET EDT <BUFLEX .TEMP ,DBRKS>>
+	   <COND (<==? <LENGTH .EDT> 1>
+		  <SET FIL <MYSIXTOS <1 .EDT>>>
+		  <SETG TECO-PROGRAM .FIL>
+		  <CRLF>
+		  <PRINC "Using 'TS ">
+		  <PRINC .FIL>
+		  <PRINC "' as TECO">)
+		 (T
+		  <PRINC
+"I can't understand that.  Please type the name of the job to run,
+e.g., TECO, EMACS, RMODE, etc.
+">
+		  <AGAIN>)>)>>>
+
+<DEFINE CLEAR () 
+	<PRINC "C">
+	<COND (<ASSIGNED? QUESTION?>
+	       <PQHEADER .QUESTION?>
+	       <COND (<==? <NTH .QUESTION? ,QTYPE> ,$TMATCH>
+		      <MATCH-PRINT <REST .QUESTION? ,QQUES>>)
+		     (<==? <NTH .QUESTION? ,QTYPE> ,$TRANK>
+		      <PRINC <NTH .QUESTION? <+ ,QQUES 4>>>
+		      <CRLF>
+		      <PRINC "Number to rank: ">
+		      <PRIN1 <NTH .QUESTION? <+ ,QQUES 5>>>
+		      <CRLF>
+		      <SSTPOSSYM!-ICALSYM "" 0 <2 .TBL>>)
+		     (<PRINC <NTH .QUESTION? <+ ,QQUES 1>>>)>)
+	      (<ASSIGNED? Q.A>
+	       <TERPRI>
+	       <PRINC "Answer from ">
+	       <PRINC <NTH .A ,AAUTH>>
+	       <PRINC ": ">
+	       <PRINC <NTH .A ,ARESP>>)>
+	<COND (<GASSIGNED? MATCH>
+	       <TERPRI>
+	       <PRINC "Match ">
+	       <PRINC ,MATCH>)
+	      (<ASSIGNED? MARKING>
+	       <PRINC "
+Score (out of ">
+	       <PRIN1 .MARKING>
+	       <PRINC ")">)>
+	<RETYPE-BUFFER!-ICALRDR T>>
+
+<DEFINE CHARINT (CHR CHN) 
+	#DECL ((CHR) CHARACTER (CHN) CHANNEL)
+	<INT-LEVEL 0>
+	<COND (<==? .CHR <ASCII 7>>
+	       <COND (<MEMQ ,PLAYER ,WINNERS> <RECURSE> <DISMISS T>)
+		     (,CTRLG-KILL <QUIT>)
+		     (<DISMISS T>)>)
+	      (<==? .CHR <ASCII 22>> <VERBOHACK>)
+	      (<==? .CHR <ASCII 20>> <ANSHACK>)>>
+
+<DEFINE MORE-HANDLE (X "OPTIONAL" Y "AUX" CHAR) 
+	#DECL ((X) <OR FIX CHANNEL> (Y) CHANNEL (CHAR) CHARACTER)
+	<COND (<TYPE? .X FIX>)
+	      (T
+	       <PRINC "--More--" .X>
+	       <COND (<==? <SET CHAR <TYI ,INCHAN>> !\ > <CRLF .X> <DISMISS T>)
+		     (<AND <ASSIGNED? MORE-ACT> <LEGAL? MORE-ACT>>
+		      <INT-LEVEL 0>
+		      <PRINC "Flushed" .X>
+		      <CRLF .X>
+		      <DISMISS T .MORE-ACT>)
+		     (<CRLF .X>
+		      <DISMISS T>)>)>>
+
+<DEFINE BUFHACK (BUF CHR) 
+	#DECL ((CHR) CHARACTER (BUF) BUFFER)
+	<PRINC "C">
+	<AND <ASSIGNED? QUESTION?> <PQHEADER .QUESTION?>>
+	<COND (<ASSIGNED? qprompt> <PRINC .qprompt> <CRLF>)>
+	<COND (<ASSIGNED? bprompt> <PRINC .bprompt>)>
+	<COND (<ASSIGNED? aprompt>
+	       <PRINC .aprompt>
+	       <TERPRI>
+	       <PRINC "Correct answer">)>
+	<AND ,VERBOSE <PRINC " (BUFFER): ">>
+	<IBUFPRINT .BUF <ASCII 4>>>
+
+<SETG SCOREVEC <IVECTOR 2 0>>
+
+<DEFINE GETQSCORE (QLOC "AUX" (SCWD <DATA-READW ,TVASS .QLOC>) (SV ,SCOREVEC)) 
+	#DECL ((QLOC) FIX (SCWD) WORD (SV) <VECTOR [2 <OR FIX FLOAT>]>)
+	<PUT .SV 1 <CHTYPE <GETBITS .SCWD <BITS 18 18>> FIX>>
+	<PUT .SV
+	     2
+	     </ <CHTYPE <GETBITS .SCWD <BITS 18 0>> FIX> 1000.000>>>
+
+<DEFINE PQSCORE (QLOC QMAX
+		 "OPTIONAL" (SV <GETQSCORE .QLOC>) (MX <* <1 .SV> .QMAX>)
+		 "AUX")
+	#DECL ((QLOC) FIX (MX QMAX) <OR FIX FLOAT>
+	       (SV) <VECTOR [2 <OR FIX FLOAT>]>)
+	<PRIN1 <1 .SV>>
+	<PRINC " players received ">
+	<PRIN1 <2 .SV>>
+	<PRINC " points of maximum ">
+	<PRIN1 .MX>
+	<PRINC " [">
+	<PRIN1 <FIX </ <* 100 <2 .SV>> .MX>>>
+	<PRINC "%]">
+	.SV>
+
+<DEFINE GETSCORE (PLAYER "AUX" (TVA ,TVASS) (SSP ,SSPACE) NUTS WHR) 
+	#DECL ((PLAYER) TIME (TVA) ASYLUM (SSP) SPACE (NUTS) LIST (WHR) FIX)
+	<SET WHR
+	     <+ ,SCORE
+		<COND (<==? .PLAYER ,PLAYER> ,LUBLK)
+		      (<SET NUTS <GET-LOSER .PLAYER>> <3 .NUTS>)>>>
+	<DATA-AREAD .TVA .WHR <ARESET .SSP T <>>>>
+
+<DEFINE PSCORE (PLAYER
+		"AUX" SCUVEC (SSP ,SSPACE) (TVA ,TVASS) (N 1) (TOT 0) (SCTOT 0)
+		      (QTOT 0) QTEMP QASKED LUBLK NSC NSC1 USLOT (TUV ,FOOUV) M
+		      CODE VAL)
+	#DECL ((PLAYER) TIME (SCUVEC) UVECTOR (QTEMP QTOT N CODE) FIX
+	       (TVA) ASYLUM (SSP) SPACE (TOT SCTOT) <OR FIX FLOAT>
+	       (NSC NSC1) FLOAT (QASKED) <VECTOR [REST LIST]> (LUBLK USLOT) FIX
+	       (TUV) <UVECTOR [4 FIX]> (VAL) <LIST [REST TIME STRING FIX FIX]>
+	       (M) <OR FALSE <VECTOR [REST FIX STRING]>>)
+	<SET SCUVEC <GETSCORE .PLAYER>>
+	<SET LUBLK <3 <SET VAL <MEMQ .PLAYER ,LOSSTABLE>>>>
+	<SET USLOT <* 4 <4 .VAL>>>
+	<SET QASKED
+	     <DATA-AREAD
+	      .TVA
+	      <+ .LUBLK
+		 ,QASKED>
+	      .SSP>>
+	<MAPF <>
+	      <FUNCTION (X) 
+		      #DECL ((X) <OR STRING FIX>)
+		      <COND (<TYPE? .X STRING>
+			     <CRLF>
+			     <PRINC .X>
+			     <INDENT-TO 19>
+			     <PRIN1 <SET NSC <1 <1 .SCUVEC>>>>
+			     <SET SCTOT <+ .SCTOT .NSC>>
+			     <INDENT-TO 33>
+			     <PRIN1 <SET NSC1 <2 <1 .SCUVEC>>>>
+			     <SET TOT <+ .TOT .NSC1>>
+			     <SET N <+ .N 1>>
+			     <INDENT-TO 47>
+			     <COND (<==? .NSC1 0.000> <PRINC "---">)
+				   (T <PRIN1 </ .NSC .NSC1>>)>
+			     <SET SCUVEC <REST .SCUVEC>>
+			     <INDENT-TO 61>
+			     <PRIN1 <SET QTEMP </ <LENGTH <1 .QASKED>> 2>>>
+			     <SET QTOT <+ .QTEMP .QTOT>>
+			     <SET QASKED <REST .QASKED>>)>>
+	      <2 ,CATS>>
+	<CRLF>
+	<PRINC "Total of ">
+	<PRIN1 .SCTOT>
+	<PRINC " points out of ">
+	<PRIN1 .TOT>
+	<PRINC " [">
+	<PRIN1 <FIX </ <* 100 .SCTOT> .TOT>>>
+	<PRINC "%].  ">
+	<PRIN1 .QTOT>
+	<PRINC <COND (<1? .QTOT> " question.")
+		     (t " questions.")>>
+	<CRLF>
+	<PRINC "Progress:  ">
+	<PRIN1 <GETLASTQ .LUBLK>>
+	<PRINC "   ">
+	<GET-LOC <+ ,PG ,PEEK-START .USLOT> .TUV>
+	<COND (<0? <1 .TUV>>
+	       <PRINC "Playing:  ">
+	       <COND (<SET M
+			   <MEMQ <CHTYPE <GETBITS <4 .TUV> <BITS 18 18>> FIX>
+				 ,STATUS-VECTOR>>
+		      <PRINC <2 .M>>)
+		     (<PRINC "??">)>
+	       <COND (<OR <1? <SET CODE <1 .M>>> <==? .CODE 9>>
+		      <COND (<0? <SET CODE
+				      <CHTYPE <GETBITS <4 .TUV> <BITS 18>>
+					      FIX>>>)
+			    (<PRINC "#"> <PRIN1 .CODE>)>)
+		     (<==? .CODE ,$SMAKE>
+		      <COND (<0? <SET CODE
+				      <CHTYPE <GETBITS <4 .TUV> <BITS 18>>
+					      FIX>>>)
+			    (<PRINC <NTH ,MAKETYPES .CODE>>)>)>)
+	      (T
+	       <PRINC "Last played on">
+	       <PDSKDATE <CHTYPE <3 .TUV> WORD>>
+	       <PRINC <ASCII 46>>)>>
+
+<DEFINE GETLASTQ (LUBLK "AUX" (QSP ,QSPACE) Q LOWQ) 
+	#DECL ((LOWQ LUBLK) FIX (Q) <OR FALSE <VECTOR FIX [REST ANY]>>
+	       (QSP) SPACE)
+	<COND (<==? <SET LOWQ
+			 <CHTYPE <DATA-READW ,TVASS <+ .LUBLK ,QNEXT>> FIX>>
+		    ,LOWQUES>
+	       0)
+	      (<SET Q <DATA-AREAD ,TVASS .LOWQ <ARESET .QSP T <>>>>
+	       <QQNUM .Q>)>>
+
+<DEFINE PDSKDATE (WD
+		  "AUX" (TIM <CHTYPE <GETBITS .WD <BITS 18 0>> FIX>)
+			(A/P " AM ") HR)
+	#DECL ((WD) <PRIMTYPE WORD> (TIM HR) FIX (A/P) STRING)
+	<PRINC " ">
+	<COND (<0? <CHTYPE .WD FIX>>
+	       <PRINC "unknown ">)
+	      (T
+	       <PRINC <NTH ,MONTHS <CHTYPE <GETBITS .WD <BITS 4 23>> FIX>>>
+	       <PRINC " ">
+	       <PRIN1 <CHTYPE <GETBITS .WD <BITS 5 18>> FIX>>
+	       <PRINC " at ">
+	       <SET HR </ .TIM 7200>>
+	       <COND (<G=? .HR 12> <SET HR <- .HR 12>> <SET A/P " PM ">)>
+	       <COND (<0? .HR> <SET HR 12>)>
+	       <PRIN1 .HR>
+	       <PRINC ":">
+	       <SET HR </ <MOD .TIM 7200> 120>>
+	       <COND (<L? .HR 10> <PRINC "0">)>
+	       <PRIN1 .HR>
+	       <PRINC .A/P>)>>
+
+<SETG MONTHS
+      ["January"
+       "February"
+       "March"
+       "April"
+       "May"
+       "June"
+       "July"
+       "August"
+       "September"
+       "October"
+       "November"
+       "December"]>
+
+<GDECL (MONTHS) <VECTOR [12 STRING]>>
+
+<DEFINE 6PRINC (FROB "AUX" (BITTBL ,6BIT))
+  #DECL ((FROB) <PRIMTYPE WORD> (BITTBL) <UVECTOR [REST BITS]>)
+  <REPEAT (CHAR) #DECL ((CHAR) FIX)
+    <SET CHAR <CHTYPE <GETBITS .FROB <1 .BITTBL>> FIX>>
+    <COND (<0? .CHAR> <RETURN .FROB>)
+	  (T
+	   <PRINC <CHTYPE <+ .CHAR 32> CHARACTER>>
+	   <COND (<EMPTY? <SET BITTBL <REST .BITTBL>>>
+		  <RETURN .FROB>)>)>>>
+
+<PRINTTYPE TIME ,6PRINC>
+
+<SETG 6BIT
+      <UVECTOR <BITS 6 30>
+	       <BITS 6 24>
+	       <BITS 6 18>
+	       <BITS 6 12>
+	       <BITS 6 6>
+	       <BITS 6 0>>>
+
+<SETG SCRATCH "MARCGR">
+
+<GDECL (6BIT) <UVECTOR [6 BITS]> (PLAYER) TIME (SCRATCH) STRING>
+
+<DEFINE MYSIXTOS (X "AUX" (S ,SCRATCH) (CT 0) (BIT ,6BIT))
+  #DECL ((X) <PRIMTYPE WORD> (CT) FIX (BIT) <UVECTOR [REST BITS]> (VALUE S) STRING)
+  <REPEAT (TCHAR)
+    #DECL ((TCHAR) FIX)
+    <COND (<0? <SET TCHAR <CHTYPE <GETBITS .X <1 .BIT>> FIX>>>
+	   <RETURN <SUBSTRUC .S 0 .CT>>)
+	  (T
+	   <SET CT <+ .CT 1>>
+	   <PUT .S .CT <CHTYPE <+ .TCHAR 32> CHARACTER>>
+	   <COND (<EMPTY? <SET BIT <REST .BIT>>>
+		  <RETURN <STRING .S>>)>)>>>
+
+<DEFINE SQUOZE (SIXBIT
+		"AUX" (MULF <* 40 40 40 40 40 40>) (VAL 0) (COUNT 6) (TC 0)
+		(SBITS ,6BIT))
+	#DECL ((VAL COUNT TC MULF) FIX (SIXBIT) <PRIMTYPE WORD>
+	       (SBITS) <UVECTOR [REST BITS]>)
+	<REPEAT ()
+		<COND (<OR <EMPTY? .SBITS> <L? .COUNT 1>>
+		       <RETURN>)>
+		<SET TC <CHTYPE <GETBITS .SIXBIT <1 .SBITS>> FIX>>
+		<SET SBITS <REST .SBITS>>
+		<COND (<AND <G=? .TC 17> <L=? .TC 26>>
+		       <SET TC <- .TC 16>>)
+		      (<AND <G=? .TC 33> <L=? .TC 58>>
+		       <SET TC <- .TC 22>>)
+		      (<==? .TC <ASCII !\.>> <SET TC 37>)
+		      (<==? .TC <ASCII !\$>> <SET TC 38>)
+		      (<==? .TC <ASCII !\%>> <SET TC 39>)
+		      (T <AGAIN>)>
+		<SET COUNT <- .COUNT 1>>
+		<SET VAL <+ .VAL <* .TC <SET MULF </ .MULF 40>>>>>>
+	<CHTYPE .VAL WORD>>
+
+<DEFINE ANNOUNCE ("AUX" (ASP <ARESET ,ASPACE T <>>) (TVA ,TVASS) ANN) 
+	#DECL ((TVA) ASYLUM (ASP) SPACE (ANN) STRING)
+	<COND (<AND <PRINC 
+"
+[PLEASE ONLY MAKE ANNOUNCEMENTS IF REALLY NECESSARY
+ TYPE ALTMODE TO FLUSH THIS COMMAND]
+">
+		    <SET ANN <GETBUF "Announcement: " .ASP>>
+		    <NOT <QUESTIONABLE? .ANN>>>
+	       <CHAIN-APPEND .TVA
+			     .ASP
+			     <AVECTOR .ASP <DSKDATE> ,PLAYER .ANN>
+			     ,HIMAIL>)>>
+
+<DEFINE READ.ANNOUNCE ("AUX" (TVA ,TVASS) (ASP <ARESET ,ASPACE T <>>) ANN
+			     (NXT
+			      <CHTYPE <DATA-READW .TVA <+ ,LUBLK ,ANNEXT>>
+				      FIX>) DAT)
+   #DECL ((TVA) ASYLUM (NXT) FIX (ASP) SPACE (ANN) <OR FALSE VECTOR>
+	  (DAT) <PRIMTYPE WORD>)
+   <REPEAT ()
+	   <COND (<0? <SET NXT <CHTYPE <DATA-READW .TVA .NXT> FIX>>>
+		  <RETURN>)
+		 (<SET ANN <DATA-AREAD .TVA .NXT .ASP>>
+		  <PRINC "
+
+From ">
+		  <6PRINC <2 .ANN>>
+		  <PDSKDATE <1 .ANN>>
+		  <CRLF>
+		  <PRINC <3 .ANN>>
+		  <SET DAT <DSKDATE>>
+		  <COND (<==? <GETBITS .DAT <BITS 4 23>>
+			      <GETBITS <1 .ANN> <BITS 4 23>>>
+			 <AND <G? <- <CHTYPE <GETBITS .DAT <BITS 5 18>> FIX>
+				     <CHTYPE <GETBITS <1 .ANN> <BITS 5 18>>
+					     FIX>>
+				  14>
+			      <DELETE.ANNOUNCE .NXT>>)
+			(<G? <- <+ <CHTYPE <GETBITS .DAT <BITS 5 18>> FIX> 30>
+				<CHTYPE <GETBITS <1 .ANN> <BITS 5 18>> FIX>>
+			     14>
+			 <DELETE.ANNOUNCE .NXT>)>)>
+	   <DATA-PRINTW .TVA <+ ,LUBLK ,ANNEXT> .NXT>>>
+
+<DEFINE DELETE.ANNOUNCE (WHR "AUX" DAT LOC) 
+	#DECL ((WHR LOC) FIX (DAT) <UVECTOR [4 WORD]>)
+	<SET DAT <DATA-FIND ,TVASS .WHR>>
+	<SET LOC <CHTYPE <NTH .DAT <+ ,NAMDATA 1>> FIX>>
+	<PUT .DAT 2 #WORD *000000000000*>
+	<PUT .DAT 3 #WORD *000000000000*>
+	<DATA-PUT ,TVASS .WHR .DAT>
+	<DATA-BLOCK-FREE ,TVASS .LOC>>
+
+<DEFINE COMREP () <SNAME ,SPLAYER> <SETG SAVEREP ,REP> <SETG REP ,COMMAND>>
+
+<DEFINE RECURSE () <COND (<MEMQ <CHTYPE <XUNAME> TIME> ,WINNERS>
+			  <SETG REP ,SAVEREP>
+			  <SNAME "MARC">
+			  <LISTEN>
+			  <SNAME ,SPLAYER>
+			  <SETG REP ,COMMAND>)>>
+
+<DEFINE ANSWER? () 
+	<OR ,ALWAYS-ANSWER
+	    <PROG topask ()
+		  #DECL ((topask) <SPECIAL ACTIVATION>)
+		  <TRUE? "
+Want the answer "
+			 "Y/N"
+			 "Yy"
+			 "Nn"
+			 <ASCII 20>>>>>
+
+<DEFINE FLOATPRINT (FLT "AUX" DEC X1000) 
+	#DECL ((FLT) FLOAT (DEC X1000) FIX)
+	<COND (<==? <MOD <SET X1000 <FIX <* 1000 .FLT>>> 10> 9>
+	       <SET X1000 <+ .X1000 1>>)>
+	<PRIN1 </ .X1000 1000>>
+	<PRINC ".">
+	<SET DEC <MOD .X1000 1000>>
+	<AND <L? .DEC 100> <PRINC <ASCII 48> ;"Char 0">>
+	<AND <L? .DEC 10> <PRINC <ASCII 48> ;"Char 0">>
+	<PRINC .DEC>>
+
+<PRINTTYPE FLOAT ,FLOATPRINT>
+
+<OVERFLOW <>>
+
+<DEFINE TVSAVE (VER DBG "OPTIONAL" (MODIF 0)) 
+	#DECL ((DBG) <OR 'T FALSE> (VER MODIF) FIX)
+	<CHAR-INIT>
+	<AND .DBG <DBG>>
+	<FUMP .VER ,SAVE .MODIF>>
+
+<SETG QSYMS <MAKESST "QSYMS" []>>
+
+<DEFINE Q-SYMS ("AUX" QPOSS (TVA ,TVASS) (CURSPACE <ARESET ,ASPACE T <>>) (IDX 1) WHR) 
+   #DECL ((TVA) ASYLUM (CURSPACE) <SPECIAL SPACE> (WHR IDX) FIX
+	  (QPOSS) <VECTOR [REST <LIST [REST FIX]>]>)
+   <COND
+    (<SET QPOSS <DATA-AREAD .TVA <+ ,LUBLK ,QASKED> .CURSPACE>>
+     <PUT
+      ,QSYMS
+      2
+      <MAPF ,ALVECTOR
+       <FUNCTION (X "AUX" CATNM) 
+	       #DECL ((X) LIST (CATNM) STRING)
+	       <AND <EMPTY? .X> <SET IDX <+ .IDX 1>> <MAPRET>>
+	       <SET CATNM <NTH <2 ,CATS> <- <* .IDX 2> 1>>>
+	       <REPEAT ((Y .X))
+		       #DECL ((Y) LIST)
+		       <COND (<EMPTY? .Y> <RETURN>)
+			     (<SET WHR <1 .Y>>
+			      <PUT .Y
+				   1
+				   <ASTRING .CURSPACE
+					    .CATNM
+					    "."
+					    <UNPARSE <2 .Y>>>>
+			      <PUT .Y 2 .WHR>
+			      <SET Y <REST .Y 2>>)>>
+	       <SET IDX <+ .IDX 1>>
+	       <MAPRET !.X>>
+       .QPOSS>>)>>
+
+<DEFINE GET.QUESTION ("OPTIONAL" (MULT <>) "AUX" SYMS SYMV) 
+	#DECL ((SYMS) <OR FALSE SYMTABLE> (SYMV) <OR FALSE VECTOR>
+	       (MULT) <OR FALSE 'T>)
+	<COND (<SET SYMS <Q-SYMS>>
+	       <COND (<SET SYMV
+			   <READARGS .SYMS
+				     "Question "
+				     '["" ""]
+				     <COND (.MULT '["SYM" "MULT"]) ('["SYM"])>>>
+		      <AND <NOT <EMPTY? <1 .SYMV>>> <1 .SYMV>>)>)
+	      (<PERR "Can't get QUESTION SYMBOLS, Q-SYMS">)>>
+
+<GDECL (SIMPLE-SPACE) SPACE>
+
+<SETG MY-SIMPLE <MAKESST "SI1" []>>
+
+<SETG HIS-SIMPLE <MAKESST "SI2" []>>
+
+<SETG SIMTABLE <MAKEMST "SSS" [,MY-SIMPLE ,HIS-SIMPLE]>>
+
+<SETG SIMTABLE? <>>
+
+<GDECL (SIMTABLE MY-SIMPLE HIS-SIMPLE) SYMTABLE (SIMTABLE?) <OR ATOM FALSE>>
+
+<DEFINE GET.SIMPLE ("OPTIONAL" (EVERYBODY? <>) "AUX" SYMV) 
+	#DECL ((SYMV) <OR FALSE VECTOR> (EVERYBODY?) <OR ATOM FALSE>)
+	<COND (<NOT ,SIMTABLE?>
+	       <LOAD.SIMPLE>)>
+	<COND (<SET SYMV
+		    <READARGS <COND (.EVERYBODY? ,SIMTABLE)
+				    (T ,MY-SIMPLE)>
+			      "Question "
+			      '["" ""]
+			      <COND (.EVERYBODY? '["SYM" "MULT"]) ('["SYM"])>>>
+	       <AND <NOT <EMPTY? <1 .SYMV>>> <1 .SYMV>>)>>
+
+<DEFINE LOAD.SIMPLE ("AUX" (TVA ,TVASS)
+			 (CURSPACE
+			    <COND (<GASSIGNED? SIMPLE-SPACE>
+				   <ARESET ,SIMPLE-SPACE T <>>)
+				  (T <SETG SIMPLE-SPACE <AFIND 1>>)>)
+			 (SISP ,SIMPLE-SPACE) SLIST (PLAYER ,PLAYER)
+			 (SPLAYER ,SPLAYER))
+   #DECL ((CURSPACE) <SPECIAL SPACE> (TVA) ASYLUM
+	  (SLIST) <LIST [REST TIME FIX FIX]> (SISP) SPACE (PLAYER) TIME
+	  (SPLAYER) STRING)
+   <SET SLIST <DATA-AREAD .TVA ,SIMPLE-LIST .SISP>>
+   <PUT ,MY-SIMPLE
+	2
+	<MAPR ,ALVECTOR
+	      <FUNCTION (X "AUX" (Y <1 .X>)) #DECL ((X) <LIST [REST <PRIMTYPE WORD>]>)
+	        <COND (<==? .Y .PLAYER>
+		       <MAPRET <ASTRING .SISP
+					.SPLAYER
+					<ASCII 46> ;"Char ."
+					<UNPARSE <2 .X>>>
+			       <3 .X>>)
+		      (<MAPRET>)>>
+	      .SLIST>>
+   <PUT ,HIS-SIMPLE
+	2
+	<MAPR ,ALVECTOR
+	      <FUNCTION (X "AUX" (Y <1 .X>)) #DECL ((X) <LIST [REST <PRIMTYPE WORD>]>)
+	        <COND (<AND <TYPE? .Y TIME>
+			    <N==? .Y .PLAYER>>
+		       <MAPRET <ASTRING .SISP <MYSIXTOS .Y> <ASCII 46> <UNPARSE <2 .X>>>
+			       <3 .X>>)
+		      (<MAPRET>)>>
+	      .SLIST>>
+   <SETG SIMTABLE? T>>
+
+<DEFINE PRINT.QSCORE ("OPTIONAL" (PRINT? T) (VERBOSE? <>)
+		      "AUX" (TVA ,TVASS) (QSP ,QSPACE) (PL 0) (PS 0.000)
+			    (MX 0.000) SYML)
+   #DECL ((SYML) <OR FALSE <LIST [REST SYMBOL]>> (TVA) ASYLUM (QSP) SPACE
+	  (PS MX) FLOAT (PL) FIX (PRINT? VERBOSE?) <OR ATOM FALSE>)
+   <COND
+    (<SET SYML <GET.QUESTION T>>
+     <CRLF>
+     <PROG MORE-ACT
+	   ()
+	   #DECL ((MORE-ACT) <SPECIAL ACTIVATION>)
+	   <RESET ,INCHAN>
+	   <MAPF <>
+		 <FUNCTION (X "AUX" FROB QUES) 
+			   #DECL ((X) SYMBOL (QUES) VECTOR
+				  (FROB) <VECTOR [2 <OR FIX FLOAT>]>)
+			   <SET QUES <DATA-AREAD .TVA <2 .X> <ARESET .QSP T <>>>>
+			   <COND (.PRINT?
+				  <PQHEADER .QUES>
+				  <COND (.VERBOSE? <PRINT-QUESTION .QUES>)
+					(T <PRINC <NTH .QUES <+ ,QQUES 1>>>)>
+				  <CRLF>
+				  <CRLF>
+				  <SET FROB
+				       <PQSCORE <NTH .QUES ,QSCORE> <NTH .QUES ,QVAL>>>
+				  <CRLF>
+				  <PRINC "------">)
+				 (<SET FROB <GETQSCORE <NTH .QUES ,QSCORE>>>)>
+			   <SET PL <+ .PL <1 .FROB>>>
+			   <SET PS <+ .PS <2 .FROB>>>
+			   <SET MX <+ .MX <* <NTH .QUES ,QVAL> <1 .FROB>>>>>
+		 .SYML>
+	   <AND <NOT <LENGTH? .SYML 1>>
+		<CRLF>
+		<PRINC "
+Total for all questions...">
+		<CRLF>>
+	   <OR <AND <LENGTH? .SYML 1> <OR .PRINT? .VERBOSE?>>
+	       <PQSCORE 0 0 <VECTOR .PL .PS> .MX>>>)>>
+
+<DEFINE PSCORES ("AUX" SYMV) 
+	#DECL ((SYMV) <OR FALSE VECTOR>)
+	<SET-STATUS ,$SPSCORE>
+	<COND (<SET SYMV
+		    <READARGS <P-SYMS> "for " '["" ""] '["SYM" "MULT"]>>
+	       <PROG MORE-ACT
+		     ()
+		     #DECL ((MORE-ACT) <SPECIAL ACTIVATION>)
+		     <RESET ,INCHAN>
+		     <MAPF <>
+			   <FUNCTION (X) 
+				     #DECL ((X) SYMBOL)
+				     <PRINC "
+Score for ">
+				     <PRINC <1 .X>>
+				     <INDENT-TO 19>
+				     <PRINC 
+"Points        Possible      Average       Questions">
+				     <CRLF>
+				     <PSCORE <CHTYPE <STRTOX <1 .X>> TIME>>
+				     <CRLF>>
+			   <1 .SYMV>>>)>>
+
+<DEFINE GETBUF (bprompt "OPTIONAL" (SP ,QSPACE) qprompt SPROMPT "AUX" BUF) 
+	#DECL ((qprompt bprompt) <SPECIAL STRING> (SPROMPT) <OR FALSE STRING>
+	       (BUF) <SPECIAL BUFFER> (SP) SPACE)
+	<TERPRI>
+	<SET BUF <BUFMAKE 20>>
+	<AND <ASSIGNED? SPROMPT>
+	     .SPROMPT
+	     <ADDSTRING .BUF .SPROMPT>>
+	<REPEAT ()
+		<COND (,VERBOSE <GETSTR .BUF .CHRTABLE .bprompt " (BUFFER):">)
+		      (<GETSTR .BUF .CHRTABLE .bprompt>)>
+		<COND (,BUFSAFE <AND <CONFIRM> <RETURN>>) (<RETURN>)>>
+	<ACOPY .SP <BUFTOS .BUF>>>
+
+<DEFINE CONFIRM () 
+	<PRINC "[confirm]">
+	<AND <RESET ,INCHAN> <==? <TYI> <ASCII 27>>>>
+
+<DEFINE PLAY-BALL ("AUX"
+		   (TAILOR
+		    <DATA-AREAD ,TVASS <+ ,LUBLK ,TAILOR> <ARESET ,SSPACE T <>>>)
+		   SWITCHES (SEQUENCE ,SEQUENCE)) 
+	#DECL ((TAILOR) <OR FALSE <UVECTOR [3 WORD]>> (SEQUENCE SWITCHES) WORD)
+	<COND (<NOT .TAILOR>)
+	      (T
+	       <SET SEQUENCE <SETG SEQUENCE <SEQ-WORD .TAILOR>>>
+	       <SET SWITCHES <SWITCH-WORD .TAILOR>>
+	       <MAPF <>
+		     <FUNCTION (BT SW) 
+			       #DECL ((BT) BITS (SW) ATOM)
+			       <COND (<==? <GETBITS .SWITCHES .BT> #WORD *000000000000*>
+				      <SETG .SW <>>)
+				     (<SETG .SW T>)>>
+		     ,BIT-TABLE
+		     ,SWITCH-TABLE>
+	       <COND (<0? <SETG TELEC-INTERVAL
+				<CHTYPE <GETBITS .SWITCHES ,RIGHT-HALF> FIX>>>)
+		     (<TELECON ,TELEC-INTERVAL>)>
+	       <SETG TECO-PROGRAM <MYSIXTOS <TECO-WORD .TAILOR>>>)>
+	<MAPF <>
+	      <FUNCTION (BT "AUX" COD) 
+		      #DECL ((BT) BITS (COD) FIX)
+		      <COND (<0? <SET COD <CHTYPE <GETBITS .SEQUENCE .BT> FIX>>>
+			     <MAPLEAVE T>)
+			    (<PRINC <NTH ,FROB-NAMES .COD>>
+			     <EVAL <NTH ,FROBS .COD>>)>>
+	      ,SEQ-BITS>
+	<COMMAND>>
+
+<SETG SWITCH-TABLE
+      '[VERBOSE ALWAYS-ANSWER PNEWMAIL IGNORE-SIMPLE KEEPASKING BUFSAFE]>
+
+<SETG BIT-TABLE
+      '[#BITS *430100000000*
+	#BITS *420100000000*
+	#BITS *410100000000*
+	#BITS *400100000000*
+	#BITS *370100000000*
+	#BITS *360100000000*]>
+
+<SETG RIGHT-HALF <BITS 18 0>>
+
+<MANIFEST RIGHT-HALF>
+
+<DEFINE SAVE-TAILOR ("AUX" (SWITCH #WORD 0) (SEQ ,SEQUENCE)
+		     (SSP <ARESET ,SSPACE T <>>)) 
+	#DECL ((SEQ SWITCH) WORD (SSP) SPACE)
+	<MAPF <>
+	      <FUNCTION (BT SW) 
+		      #DECL ((BT) BITS (SW) ATOM)
+		      <SET SWITCH <PUTBITS .SWITCH .BT <COND (,.SW 1) (0)>>>>
+	      ,BIT-TABLE
+	      ,SWITCH-TABLE>
+	<SET SWITCH
+	     <PUTBITS .SWITCH
+		      ,RIGHT-HALF
+		      ,TELEC-INTERVAL>>
+	<DATA-APRINT ,TVASS
+		     <+ ,LUBLK ,TAILOR>
+		     .SSP
+		     <AUVECTOR .SSP
+			       .SEQ
+			       .SWITCH
+			       <CHTYPE <STRTOX ,TECO-PROGRAM> WORD>>>>
+
+<DEFINE GET-SEQUENCE ("AUX" SEQ (S #WORD *000000000000*)) 
+	#DECL ((SEQ) <OR FALSE <VECTOR LIST>> (S) WORD)
+	<UNWIND
+	 <PROG ()
+	   <SETG COMPLETES " ,">
+	   <COND (<SET SEQ
+		       <READARGS ,SEQ-SYMS "will be " '["" ""] '["SYM" "MULT"]>>
+		  <MAPF <>
+			<FUNCTION (BT SYM) 
+				  #DECL ((BT) BITS (SYM) <PRIMTYPE VECTOR>)
+				  <SET S <PUTBITS .S .BT <2 .SYM>>>>
+			,SEQ-BITS
+			<1 .SEQ>>
+		  <SETG SEQUENCE .S>)>
+	   <SETG COMPLETES " ">>
+	 <SETG COMPLETES " ">>>
+
+<SETG SEQ-SYMS
+      <MAKEBST "SS"
+	       ["Answer"
+		1
+		"Babble"
+		2
+		"DDT.babble"
+		3
+		"Grade"
+		4
+		"Make"
+		5
+		"Peek"
+		6
+		"Print.score"
+		7
+		"Quit"
+		8
+		"Read.mail"
+		9
+		"Status.of.question"
+		10
+		"Summary.status.of.question"
+		11
+		"Tiny.babble"
+		12
+		"Twhois"
+		13]>>
+
+<DEFINE SET-STATUS (CODE "OPTIONAL" (FROB 0) "AUX" (PG ,PG) (TU ,TUV)) 
+	#DECL ((PG CODE FROB) FIX (TU) <UVECTOR [4 FIX]>)
+	<COND (<GASSIGNED? TINDEX>
+	       <PUT-LOC <+ ,PEEK-START .PG ,TINDEX>
+			<PUT .TU 4 <PUTBITS .FROB <BITS 18 18> .CODE>>>)>>
+
+<SETG TOBRKS " ,
+">
+
+<SETG DBRKS ",./ 	
+">
+
+<GDECL (TOBRKS DBRKS) STRING>
+
+<DEFINE BUFLEX (S "OPTIONAL" (BRKS ,TOBRKS) "AUX" (LL (<CHTYPE 0 TIME>))
+		(L .LL) (S1 .S)) 
+	#DECL ((S S1 BRKS) STRING (VALUE LL L) <LIST [REST TIME]>)
+	<REPEAT ()
+		<COND (<OR <EMPTY? .S1> <MEMQ <1 .S1> .BRKS>>
+		       <AND
+			<N==? .S .S1>
+			<PUTREST
+			 .L
+			 <SET L
+			      (<CHTYPE <STRTOX <SUBSTRUC
+						.S
+						0
+						<- <LENGTH .S> <LENGTH .S1>>>> TIME>)>>>
+		       <AND <EMPTY? .S1> <RETURN <REST .LL>>>
+		       <SET S <REST .S1>>)>
+		<SET S1 <REST .S1>>>>
+
+<SETG MAKETYPES
+      ["ZORK!"
+       "long answer"
+       "matching"
+       "M.C."
+       "T/F"
+       "ZORK!"
+       "simple"
+       "ZORK!"
+       "ranking"]>
+
+;"POINTER TO START OF USER BLOCK FOR USER FOO
+   SETG'S FOO TO THAT FIX"
+
+<DEFINE UBLOCK (STR "OPTIONAL" (L ,LOSSTABLE) M) 
+	#DECL ((STR) STRING (L) LIST (M) <OR LIST FALSE>)
+	<COND (<GASSIGNED? <PARSE .STR>> ,<PARSE .STR>)
+	      (<SET M <MEMQ <CHTYPE <STRTOX .STR> TIME> .L>>
+	       <SETG <PARSE .STR> <3 .M>>)>>
+
+<SETG ERRFLAG <>>
+
+<GDECL (ERRFLAG) <OR ATOM FALSE>>
+
+<DEFINE HANDLE (EFRM "TUPLE" JUNK "AUX" VAL TLIST TTY-HEADER) 
+   #DECL ((EFRM) FRAME (JUNK) TUPLE (VAL) FIX
+	  (TLIST) <OR FALSE <LIST [REST TIME STRING FIX FIX]>>
+	  (TTY-HEADER) IHEADER)
+   <COND
+    (,ERRFLAG
+     <PRINC "ERROR in error handler.">
+     <QUIT>)
+    (,CTRLG-KILL
+     <SETG ERRFLAG T>
+     <DISABLE <SET TTY-HEADER <GET ,INCHAN INTERRUPT!- >>>
+     <INT-LEVEL 100000>
+     <PRINC "*ERROR*">
+     <CRLF>
+     <MAPF <>
+       <FUNCTION (X)
+         <PRIN1 .X>
+	 <CRLF>>
+       .JUNK>
+     <PRINC "ERROR during startup.">
+     <COND (<SEND-ERROR "STARTUP ERROR" .JUNK>
+	    <VALRET ":GENJOB
+:DISOWN
+">
+	    <ENABLE .TTY-HEADER>
+	    <OFF ,ERRH>)
+	   (T
+	    <CRLF>
+	    <PRINC "TRIVIA suicided.">
+	    <QUIT>)>)
+    (<AND <==? <LENGTH .JUNK> 3>
+	  <==? <1 .JUNK> UNASSIGNED-VARIABLE!-ERRORS>
+	  <==? <3 .JUNK> GVAL>>
+     <COND (<AND <GASSIGNED? LOSSTABLE>
+		 <SET TLIST
+		      <MEMQ <CHTYPE <STRTOX <SPNAME <2 .JUNK>>> TIME>
+			    ,LOSSTABLE>>>
+	    <SETG <2 .JUNK> <SET VAL <3 .TLIST>>>
+	    <INT-LEVEL 0>
+	    <ERRET .VAL .EFRM>)>)
+    (<OR <==? ,PLAYER <CHTYPE <STRTOX "TAA"> TIME>>
+	 <==? ,PLAYER <CHTYPE <STRTOX "MARC"> TIME>>>
+     <SETG REP ,SAVEREP>
+     <SNAME "MARC">)>>
+
+<DEFINE AFIXCHOMP ("AUX" TTY-HEADER)
+  #DECL ((TTY-HEADER) IHEADER)
+  <DISABLE <SET TTY-HEADER <GET ,INCHAN INTERRUPT!- >>>
+  <CLOSE <OPEN "PRINT" "_MSGS_;TRIVIA DEATH">>
+  <CRLF>
+  <PRINC "GROSS LOSSAGE">
+  <CRLF>
+  <PRINC "TRIVIA is down.  Please tell other triviators to go away,
+then use TVBUG to describe EXACTLY what you were doing.">
+  <CRLF>
+  <VALRET ":GENJOB
+:DISOWN
+:TVBUG
+">
+  <ENABLE .TTY-HEADER>
+  <OFF ,ERRH>
+  <LISTEN>>
+
+<DEFINE SYSDOWN (DWNTIME) #DECL ((DWNTIME) FIX)
+  <COND (<L? .DWNTIME 0>
+	 <CRLF>
+	 <PRINC "ITS revived!">
+	 <CRLF>
+	 <AND <==? ,FLUSH SYSDOWN> <SETG FLUSH <>>>)
+	(T
+	 <SETG FLUSH SYSDOWN>)>>
+
+<AND <NOT <LOOKUP "COMPILE" <ROOT>>>
+     <NOT <LOOKUP "GLUE" <GET PACKAGE OBLIST>>>
+     <SETG ERRH <HANDLER <GET ERROR!-INTERRUPTS INTERRUPT> ,HANDLE>>
+     <SETG SYSDOWNH <HANDLER <EVENT "SYSDOWN" 1> ,SYSDOWN>>>
+
+<DEFINE PLAY ("OPTIONAL" (PLAYER <>) "AUX" FOO TINDEX LUBLK) 
+	#DECL ((PLAYER) <OR STRING FALSE> (FOO) <OR FALSE FIX> (TINDEX LUBLK) FIX)
+	<COND (<MEMQ <CHTYPE <XUNAME> TIME> ,WINNERS>
+	       <COND (<NOT .PLAYER>
+		      <SET PLAYER <READER '[] "as " "" '["LINE"] <>>>)>
+	       <COND (<SET FOO <UBLOCK .PLAYER>>
+		      <SET TINDEX <* 4 <4 <MEMQ <CHTYPE <STRTOX .PLAYER> TIME>
+						,LOSSTABLE>>>>
+		      <COND (<DHLOCK <+ .TINDEX ,PEEK-START ,PG>>
+			     <DUNLOCK <+ ,TINDEX ,PEEK-START ,PG>>
+			     <SETG TINDEX .TINDEX>
+			     <SETG LUBLK .FOO>
+			     <SETG PLAYER <CHTYPE <STRTOX .PLAYER> TIME>>
+			     <PUT ,TUV 2 <CHTYPE ,PLAYER FIX>>
+			     .PLAYER)
+			    (T <PRINC "Already playing">)>)
+		     (T <PRINC "You blew it, champ.">)>)>>
+
+<DEFINE UNLOCK-PLAYER (NAME "AUX" (L <MEMQ <CHTYPE <STRTOX .NAME> TIME> <NEW-LOSS>>)
+		       TINDEX TEMP)
+	#DECL ((L) <OR FALSE <LIST [REST TIME STRING FIX FIX]>> (NAME) STRING
+	       (TINDEX TEMP) FIX)
+	<COND (.L
+	       <SET TINDEX <4 .L>>
+	       <SET TEMP <+ ,PEEK-START
+			    <SETG PG <* .PG 1024>>
+			    <* .TINDEX 4>>>
+	       <COND (<0? <1 <GET-LOC .TEMP ,NTTUV>>>
+		      <OR <DUNLOCK .TEMP>
+			  <PUT-LOC .TEMP ![-1]>>
+		      T)
+		     (T
+		      #FALSE ("ALREADY UNLOCKED"))>)
+	      (#FALSE ("NOT A PLAYER"))>>
+
+<DEFINE RDELETE (FOO "AUX" (DC ,TVASS) (S <ARESET ,ASPACE T <>>)
+		 (ZORK <ALIST .S 1>) FWEEP)
+  #DECL ((FOO) <OR FIX <LIST [REST FIX]>> (DC) ASYLUM (S) SPACE (ZORK) LIST
+	 (FWEEP) <OR <FALSE FIX> <PRIMTYPE VECTOR>>)
+  <COND (<TYPE? .FOO FIX>
+	 <COND (<SET FWEEP <DATA-DELETE .DC .FOO>>)
+	       (<==? <1 .FWEEP> 8>
+		<DATA-APRINT .DC .FOO .S .ZORK>
+		<DATA-DELETE .DC .FOO>)>)
+	(T
+	 <MAPF <>
+	   <FUNCTION (X) #DECL ((X) FIX)
+	     <COND (<SET FWEEP <DATA-DELETE .DC .X>>)
+		   (<==? <1 .FWEEP> 8>
+		    <DATA-APRINT .DC .X .S .ZORK>
+		    <DATA-DELETE .DC .X>)>>
+	   .FOO>)>>
+
+  
